@@ -1,6 +1,6 @@
 import React, { useReducer, useEffect, useCallback, useMemo, useState } from 'react';
-import { Button, Card, CardContent, Typography, TextField } from '@mui/material';
-import { Star, Check, Globe, ChevronLeft, Home, Gamepad, Eye, Shuffle } from 'lucide-react';
+import { Button, Card, CardContent, Typography, TextField, FormGroup, FormControlLabel, Switch, Collapse } from '@mui/material';
+import { Star, Check, Globe, ChevronLeft, Home, Gamepad, Eye, Shuffle, Settings } from 'lucide-react';
 
 import versesData from './verses.json';
 
@@ -11,7 +11,7 @@ const reducer = (state, action) => {
     case 'SET_CATEGORIES':
       return { ...state, categories: action.payload };
     case 'SET_SUBCATEGORIES':
-      return { ...state, subcategories: action.payload, currentCategory: action.category };
+      return { ...state, subcategories: action.payload };
     case 'SET_VERSES':
       return { ...state, verses: action.payload, currentSubcategory: action.subcategory };
     case 'SET_NAVIGATION_LEVEL':
@@ -48,6 +48,12 @@ const reducer = (state, action) => {
       return { ...state, isCompleted: action.payload };
     case 'SET_VIEW_MODE':
       return { ...state, viewMode: action.payload };
+    case 'SET_SELECTED_CATEGORIES':
+      return { ...state, selectedCategories: action.payload };
+    case 'SET_SELECTED_SUBCATEGORIES':
+      return { ...state, selectedSubcategories: action.payload };
+    case 'TOGGLE_RANGE_SETTINGS':
+      return { ...state, showRangeSettings: !state.showRangeSettings };
     default:
       return state;
   }
@@ -57,7 +63,6 @@ const initialState = {
   categories: [],
   subcategories: [],
   verses: [],
-  currentCategory: null,
   currentSubcategory: null,
   navigationLevel: 'categories',
   completedVerses: [],
@@ -71,6 +76,9 @@ const initialState = {
   checkCount: 0,
   isCompleted: false,
   viewMode: 'normal',
+  selectedCategories: [],
+  selectedSubcategories: [],
+  showRangeSettings: false,
 };
 
 const BibleVerseApp = () => {
@@ -79,7 +87,9 @@ const BibleVerseApp = () => {
 
   useEffect(() => {
     const categories = [...new Set(versesData.map(verse => verse.category))];
+    const subcategories = [...new Set(versesData.map(verse => verse.subcategory))];
     dispatch({ type: 'SET_CATEGORIES', payload: categories });
+    dispatch({ type: 'SET_SUBCATEGORIES', payload: subcategories });
 
     try {
       const storedCompleted = JSON.parse(localStorage.getItem('completedVerses')) || [];
@@ -90,18 +100,62 @@ const BibleVerseApp = () => {
     }
   }, []);
 
-  const handleCategorySelect = useCallback((category) => {
+  const handleCategoryClick = useCallback((category) => {
     const subcategories = [...new Set(versesData.filter(verse => verse.category === category).map(verse => verse.subcategory))];
-    dispatch({ type: 'SET_SUBCATEGORIES', payload: subcategories, category });
+    dispatch({ type: 'SET_SUBCATEGORIES', payload: subcategories });
     dispatch({ type: 'SET_NAVIGATION_LEVEL', payload: 'subcategories' });
   }, []);
 
-  const handleSubcategorySelect = useCallback((subcategory) => {
+  const handleSubcategoryClick = useCallback((subcategory) => {
     const verses = versesData.filter(verse => verse.subcategory === subcategory).sort((a, b) => a.number - b.number);
     dispatch({ type: 'SET_VERSES', payload: verses, subcategory });
     dispatch({ type: 'SET_NAVIGATION_LEVEL', payload: 'verses' });
-    dispatch({ type: 'SET_VIEW_MODE', payload: 'normal' });
   }, []);
+
+  const handleCategorySelect = useCallback((category) => {
+    const updatedCategories = state.selectedCategories.includes(category)
+      ? state.selectedCategories.filter(cat => cat !== category)
+      : [...state.selectedCategories, category];
+    
+    dispatch({ type: 'SET_SELECTED_CATEGORIES', payload: updatedCategories });
+
+    const categorySubcategories = versesData
+      .filter(verse => verse.category === category)
+      .map(verse => verse.subcategory);
+    
+    let updatedSubcategories;
+    if (updatedCategories.includes(category)) {
+      updatedSubcategories = [...new Set([...state.selectedSubcategories, ...categorySubcategories])];
+    } else {
+      updatedSubcategories = state.selectedSubcategories.filter(subcat => !categorySubcategories.includes(subcat));
+    }
+    
+    dispatch({ type: 'SET_SELECTED_SUBCATEGORIES', payload: updatedSubcategories });
+  }, [state.selectedCategories, state.selectedSubcategories]);
+
+  const handleSubcategorySelect = useCallback((subcategory) => {
+    const updatedSubcategories = state.selectedSubcategories.includes(subcategory)
+      ? state.selectedSubcategories.filter(subcat => subcat !== subcategory)
+      : [...state.selectedSubcategories, subcategory];
+    
+    dispatch({ type: 'SET_SELECTED_SUBCATEGORIES', payload: updatedSubcategories });
+
+    const subcategoryCategory = versesData.find(verse => verse.subcategory === subcategory)?.category;
+    const categorySubcategories = versesData
+      .filter(verse => verse.category === subcategoryCategory)
+      .map(verse => verse.subcategory);
+    
+    const allCategorySubcategoriesSelected = categorySubcategories.every(subcat => updatedSubcategories.includes(subcat));
+    
+    let updatedCategories;
+    if (allCategorySubcategoriesSelected) {
+      updatedCategories = [...new Set([...state.selectedCategories, subcategoryCategory])];
+    } else {
+      updatedCategories = state.selectedCategories.filter(cat => cat !== subcategoryCategory);
+    }
+    
+    dispatch({ type: 'SET_SELECTED_CATEGORIES', payload: updatedCategories });
+  }, [state.selectedCategories, state.selectedSubcategories]);
 
   const handleComplete = useCallback((verse) => {
     const verseId = getVerseId(verse);
@@ -121,12 +175,10 @@ const BibleVerseApp = () => {
     if (state.navigationLevel === 'subcategories') {
       dispatch({ type: 'SET_NAVIGATION_LEVEL', payload: 'categories' });
     } else if (state.navigationLevel === 'verses') {
-      const subcategories = [...new Set(versesData.filter(verse => verse.category === state.currentCategory).map(verse => verse.subcategory))];
-      dispatch({ type: 'SET_SUBCATEGORIES', payload: subcategories, category: state.currentCategory });
       dispatch({ type: 'SET_NAVIGATION_LEVEL', payload: 'subcategories' });
     }
     dispatch({ type: 'SET_VIEW_MODE', payload: 'normal' });
-  }, [state.navigationLevel, state.currentCategory]);
+  }, [state.navigationLevel]);
 
   const goHome = useCallback(() => {
     dispatch({ type: 'SET_NAVIGATION_LEVEL', payload: 'categories' });
@@ -179,26 +231,119 @@ const BibleVerseApp = () => {
     }
   }, [state.currentVerse, state.userInput, state.isKorean, state.checkCount]);
 
-  const handleRandomVerse = useCallback(() => {
-    const subcategoryVerses = versesData.filter(verse => verse.subcategory === state.currentVerse.subcategory);
-    const randomVerse = subcategoryVerses[Math.floor(Math.random() * subcategoryVerses.length)];
+  const getRandomVerse = useCallback(() => {
+    let filteredVerses = versesData;
+    if (state.selectedCategories.length > 0) {
+      filteredVerses = filteredVerses.filter(verse => state.selectedCategories.includes(verse.category));
+    }
+    if (state.selectedSubcategories.length > 0) {
+      filteredVerses = filteredVerses.filter(verse => state.selectedSubcategories.includes(verse.subcategory));
+    }
+    return filteredVerses[Math.floor(Math.random() * filteredVerses.length)];
+  }, [state.selectedCategories, state.selectedSubcategories]);
+
+  const startRandomGame = useCallback(() => {
+    const randomVerse = getRandomVerse();
     dispatch({ type: 'START_GAME', payload: randomVerse });
-  }, [state.currentVerse]);
+  }, [getRandomVerse]);
+
+  const handleRandomVerse = useCallback(() => {
+    const randomVerse = getRandomVerse();
+    dispatch({ type: 'START_GAME', payload: randomVerse });
+  }, [getRandomVerse]);
 
   const setViewMode = useCallback((mode) => {
     dispatch({ type: 'SET_VIEW_MODE', payload: mode });
     if (mode === 'favorites' || mode === 'completed') {
       dispatch({ type: 'SET_NAVIGATION_LEVEL', payload: 'verses' });
-    } else if (mode === 'normal' && state.currentSubcategory) {
-      dispatch({ type: 'SET_VERSES', payload: versesData.filter(verse => verse.subcategory === state.currentSubcategory) });
     }
-  }, [state.currentSubcategory]);
-
-  const startRandomGame = useCallback(() => {
-    const randomVerse = versesData[Math.floor(Math.random() * versesData.length)];
-    dispatch({ type: 'START_GAME', payload: randomVerse });
   }, []);
 
+  const toggleRangeSettings = useCallback(() => {
+    dispatch({ type: 'TOGGLE_RANGE_SETTINGS' });
+  }, []);
+
+  const getSelectedRangeText = useCallback(() => {
+    const selectedCategories = state.selectedCategories.length;
+    const selectedSubcategories = state.selectedSubcategories.length;
+    
+    if (selectedCategories === 0 && selectedSubcategories === 0) {
+      return '전체';
+    }
+
+    let text = '';
+    if (selectedCategories > 0) {
+      text += `${selectedCategories}개 카테고리`;
+    }
+    if (selectedSubcategories > 0) {
+      if (text) text += ', ';
+      text += `${selectedSubcategories}개 서브카테고리`;
+    }
+    return text + ' 선택됨';
+  }, [state.selectedCategories, state.selectedSubcategories]);
+
+  const renderGameControls = useMemo(() => (
+    <div style={{ marginBottom: '1rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+        <Typography variant="subtitle1">선택된 범위: {getSelectedRangeText()}</Typography>
+        <Button 
+          onClick={toggleRangeSettings}
+          variant="outlined"
+          startIcon={<Settings />}
+        >
+          범위 설정
+        </Button>
+      </div>
+      <Collapse in={state.showRangeSettings}>
+        <FormGroup>
+          <Typography variant="subtitle1">카테고리</Typography>
+          {state.categories.map(category => (
+            <FormControlLabel
+              key={category}
+              control={
+                <Switch
+                  checked={state.selectedCategories.includes(category)}
+                  onChange={() => handleCategorySelect(category)}
+                />
+              }
+              label={category}
+            />
+          ))}
+          <Typography variant="subtitle1" style={{ marginTop: '1rem' }}>서브카테고리</Typography>
+          {state.categories.map(category => (
+            <div key={category}>
+              <Typography variant="subtitle2">{category}</Typography>
+              {state.subcategories
+                .filter(subcategory => versesData.some(verse => verse.category === category && verse.subcategory === subcategory))
+                .map(subcategory => (
+                  <FormControlLabel
+                    key={subcategory}
+                    control={
+                      <Switch
+                        checked={state.selectedSubcategories.includes(subcategory)}
+                        onChange={() => handleSubcategorySelect(subcategory)}
+                      />
+                    }
+                    label={subcategory}
+                  />
+                ))
+              }
+            </div>
+          ))}
+        </FormGroup>
+      </Collapse>
+      <Button 
+        onClick={startRandomGame}
+        variant="contained"
+        color="secondary"
+        fullWidth
+        style={{ marginTop: '1rem' }}
+      >
+        <Shuffle size={24} style={{ marginRight: '0.5rem' }} /> 
+        랜덤 구절로 게임 시작
+      </Button>
+    </div>
+  ), [state.categories, state.subcategories, state.selectedCategories, state.selectedSubcategories, state.showRangeSettings, handleCategorySelect, handleSubcategorySelect, startRandomGame, toggleRangeSettings, getSelectedRangeText]);
   const renderCategories = useMemo(() => (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
       <Button 
@@ -212,7 +357,7 @@ const BibleVerseApp = () => {
       {state.categories.map(category => (
         <Button 
           key={category} 
-          onClick={() => handleCategorySelect(category)} 
+          onClick={() => handleCategoryClick(category)} 
           variant="outlined"
           style={{ width: '400px', height: '80px', fontSize: '1.2rem' }}
         >
@@ -220,14 +365,14 @@ const BibleVerseApp = () => {
         </Button>
       ))}
     </div>
-  ), [state.categories, handleCategorySelect, startRandomGame]);
+  ), [state.categories, handleCategoryClick, startRandomGame]);
 
   const renderSubcategories = useMemo(() => (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
       {state.subcategories.map(subcategory => (
         <Button 
           key={subcategory} 
-          onClick={() => handleSubcategorySelect(subcategory)} 
+          onClick={() => handleSubcategoryClick(subcategory)} 
           variant="outlined"
           style={{ width: '400px', height: '60px', fontSize: '1rem' }}
         >
@@ -235,7 +380,7 @@ const BibleVerseApp = () => {
         </Button>
       ))}
     </div>
-  ), [state.subcategories, handleSubcategorySelect]);
+  ), [state.subcategories, handleSubcategoryClick]);
 
   const renderVerseList = useCallback(() => {
     let versesToRender;
@@ -254,6 +399,13 @@ const BibleVerseApp = () => {
         listTitle = state.currentSubcategory || '모든 구절';
     }
 
+    const getVerseNumberInSubcategory = (verse) => {
+      const subcategoryVerses = versesData.filter(v => v.subcategory === verse.subcategory);
+      const totalVerses = subcategoryVerses.length;
+      const currentIndex = subcategoryVerses.findIndex(v => v.number === verse.number) + 1;
+      return `${currentIndex}/${totalVerses}`;
+    };
+
     return (
       <>
         <Typography variant="h5" style={{ textAlign: 'center', marginBottom: '1rem' }}>{listTitle}</Typography>
@@ -269,7 +421,12 @@ const BibleVerseApp = () => {
                   <Typography variant="body2" color="textSecondary">
                     {verse.category} &gt; {verse.subcategory}
                   </Typography>
-                  <Typography variant="h6">{`${verse.book} ${verse.chapter}:${verse.verse1}${verse.verse2 ? `-${verse.verse2}` : ''}`}</Typography>
+                  <Typography variant="h6">
+                    {`${verse.book} ${verse.chapter}:${verse.verse1}${verse.verse2 ? `-${verse.verse2}` : ''}`}
+                    <span style={{ fontSize: '0.8em', marginLeft: '0.5rem' }}>
+                      ({getVerseNumberInSubcategory(verse)})
+                    </span>
+                  </Typography>
                   <Typography variant="body2" style={{ marginTop: '0.5rem', marginBottom: '0.5rem' }}>
                     {state.isKorean ? verse.koreanText : verse.englishText}
                   </Typography>
@@ -310,6 +467,7 @@ const BibleVerseApp = () => {
     return (
       <Card style={{ width: '100%', maxWidth: '600px', margin: '0 auto' }}>
         <CardContent>
+          {renderGameControls}
           <Typography variant="body2" color="textSecondary">
             {state.currentVerse.category} &gt; {state.currentVerse.subcategory}
           </Typography>
@@ -377,11 +535,11 @@ const BibleVerseApp = () => {
         </CardContent>
       </Card>
     );
-  }, [state.gameMode, state.currentVerse, state.userInput, state.accuracy, state.isKorean, state.peekCount, state.checkCount, state.isCompleted, state.completedVerses, handleInputChange, handlePeek, handleCheck, handleComplete, exitGame, handleRandomVerse, showVerse]);
+  }, [state.gameMode, state.currentVerse, state.isKorean, state.peekCount, state.accuracy, state.userInput, state.checkCount, state.isCompleted, state.completedVerses, handlePeek, handleInputChange, handleCheck, handleComplete, exitGame, handleRandomVerse, showVerse, renderGameControls]);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', padding: '1rem' }}>
-      <div style={{ marginBottom: '1rem' }}>
+      <div style={{ position: 'sticky', top: 0, backgroundColor: 'white', zIndex: 1000, padding: '1rem', marginBottom: '1rem', display: 'flex', justifyContent: 'space-between' }}>
         <Button onClick={state.gameMode ? exitGame : goBack} disabled={state.navigationLevel === 'categories'}>
           <ChevronLeft size={16} /> 이전단계로 돌아가기
         </Button>
@@ -400,37 +558,37 @@ const BibleVerseApp = () => {
         </>
       )}
 
-<div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', marginTop: '1rem' }}>
-  <Button 
-    onClick={() => {
-      setViewMode('favorites');
-      if (state.gameMode) {
-        dispatch({ type: 'EXIT_GAME' });
-      }
-    }}
-    aria-label="View favorites"
-    variant={state.viewMode === 'favorites' ? 'contained' : 'outlined'}
-  >
-    <Star size={16} style={{ marginRight: '0.5rem' }} /> 
-    즐겨찾기 리스트({(state.favorites && state.favorites.length) || 0})
-  </Button>
-  <Button 
-    onClick={() => {
-      setViewMode('completed');
-      if (state.gameMode) {
-        dispatch({ type: 'EXIT_GAME' });
-      }
-    }}
-    aria-label="View completed"
-    variant={state.viewMode === 'completed' ? 'contained' : 'outlined'}
-  >
-    <Check size={16} style={{ marginRight: '0.5rem' }} /> 
-    암송완료 리스트({(state.completedVerses && state.completedVerses.length) || 0})
-  </Button>
-  <Button onClick={toggleLanguage} aria-label="Toggle language">
-    <Globe size={16} style={{ marginRight: '0.5rem' }} /> {state.isKorean ? "English" : "한국어"}
-  </Button>
-</div>
+      <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', marginTop: '1rem' }}>
+        <Button 
+          onClick={() => {
+            setViewMode('favorites');
+            if (state.gameMode) {
+              dispatch({ type: 'EXIT_GAME' });
+            }
+          }}
+          aria-label="View favorites"
+          variant={state.viewMode === 'favorites' ? 'contained' : 'outlined'}
+        >
+          <Star size={16} style={{ marginRight: '0.5rem' }} /> 
+          즐겨찾기 리스트({(state.favorites && state.favorites.length) || 0})
+        </Button>
+        <Button 
+          onClick={() => {
+            setViewMode('completed');
+            if (state.gameMode) {
+              dispatch({ type: 'EXIT_GAME' });
+            }
+          }}
+          aria-label="View completed"
+          variant={state.viewMode === 'completed' ? 'contained' : 'outlined'}
+        >
+          <Check size={16} style={{ marginRight: '0.5rem' }} /> 
+          암송완료 리스트({(state.completedVerses && state.completedVerses.length) || 0})
+        </Button>
+        <Button onClick={toggleLanguage} aria-label="Toggle language">
+          <Globe size={16} style={{ marginRight: '0.5rem' }} /> {state.isKorean ? "English" : "한국어"}
+        </Button>
+      </div>
     </div>
   );
 };
