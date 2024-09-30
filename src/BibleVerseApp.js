@@ -1,6 +1,6 @@
 import React, { useReducer, useEffect } from 'react';
-import { Button, Typography } from '@mui/material';
-import { Star, Check, Globe, ChevronLeft, Home, Shuffle } from 'lucide-react';
+import { Button } from '@mui/material';
+import { Star, Check, Globe, ChevronLeft, Home } from 'lucide-react';
 import { reducer, initialState } from './stateManagement';
 import GameComponent from './GameComponent';
 import { renderCategories, renderSubcategories, renderSubsubcategories, renderVerseList } from './gameLogic';
@@ -11,9 +11,24 @@ const BibleVerseApp = () => {
   const [state, dispatch] = useReducer(reducer, initialState);
 
   useEffect(() => {
-    const categories = [...new Set(versesData.map(verse => verse.category))];
-    const subcategories = [...new Set(versesData.map(verse => verse.subcategory))];
-    const subsubcategories = [...new Set(versesData.map(verse => verse.subsubcategory))];
+    const categoryOrder = [
+      "그리스도인의 확신",
+      "그리스도인의 생활지침",
+      "주제별 성경암송(60구절)",
+      "주제별 성경암송(180구절)",
+      "DEP 242"
+    ];
+  
+    const sortedVersesData = [...versesData].sort((a, b) => {
+      return categoryOrder.indexOf(a.category) - categoryOrder.indexOf(b.category);
+    });
+    
+    const categories = categoryOrder.filter(category => 
+      sortedVersesData.some(verse => verse.category === category)
+    );
+    const subcategories = [...new Set(sortedVersesData.map(verse => verse.subcategory))];
+    const subsubcategories = [...new Set(sortedVersesData.map(verse => verse.subsubcategory))];
+    
     dispatch({ type: 'SET_CATEGORIES', payload: categories });
     dispatch({ type: 'SET_SUBCATEGORIES', payload: subcategories });
     dispatch({ type: 'SET_SUBSUBCATEGORIES', payload: subsubcategories });
@@ -28,12 +43,18 @@ const BibleVerseApp = () => {
   }, []);
 
   const goBack = () => {
-    if (state.navigationLevel === 'subsubcategories') {
+    if (state.navigationLevel === 'verses') {
+      if (state.currentSubsubcategory) {
+        dispatch({ type: 'SET_NAVIGATION_LEVEL', payload: 'subsubcategories' });
+      } else if (state.currentSubcategory) {
+        dispatch({ type: 'SET_NAVIGATION_LEVEL', payload: 'subcategories' });
+      } else {
+        dispatch({ type: 'SET_NAVIGATION_LEVEL', payload: 'categories' });
+      }
+    } else if (state.navigationLevel === 'subsubcategories') {
       dispatch({ type: 'SET_NAVIGATION_LEVEL', payload: 'subcategories' });
     } else if (state.navigationLevel === 'subcategories') {
       dispatch({ type: 'SET_NAVIGATION_LEVEL', payload: 'categories' });
-    } else if (state.navigationLevel === 'verses') {
-      dispatch({ type: 'SET_NAVIGATION_LEVEL', payload: 'subsubcategories' });
     }
     dispatch({ type: 'SET_VIEW_MODE', payload: 'normal' });
   };

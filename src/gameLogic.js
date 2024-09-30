@@ -23,6 +23,7 @@ export const renderCategories = (state, dispatch) => (
         onClick={() => {
           const subcategories = [...new Set(versesData.filter(verse => verse.category === category).map(verse => verse.subcategory))];
           dispatch({ type: 'SET_SUBCATEGORIES', payload: subcategories });
+          dispatch({ type: 'SET_CURRENT_CATEGORY', payload: category });
           dispatch({ type: 'SET_NAVIGATION_LEVEL', payload: 'subcategories' });
         }} 
         variant="outlined"
@@ -34,42 +35,72 @@ export const renderCategories = (state, dispatch) => (
   </div>
 );
 
-export const renderSubcategories = (state, dispatch) => (
-  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
-    {state.subcategories.map(subcategory => (
-      <Button 
-        key={subcategory} 
-        onClick={() => {
-          const subsubcategories = [...new Set(versesData.filter(verse => verse.subcategory === subcategory).map(verse => verse.subsubcategory))];
-          dispatch({ type: 'SET_SUBSUBCATEGORIES', payload: subsubcategories });
-          dispatch({ type: 'SET_NAVIGATION_LEVEL', payload: 'subsubcategories' });
-        }} 
-        variant="outlined"
-        style={{ width: '400px', height: '60px', fontSize: '1rem' }}
-      >{subcategory}
-      </Button>
-    ))}
-  </div>
-);
+export const renderSubcategories = (state, dispatch) => {
+  if (!state.subcategories || state.subcategories.length === 0) {
+    return <Typography>No subcategories available</Typography>;
+  }
 
-export const renderSubsubcategories = (state, dispatch) => (
-  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
-    {state.subsubcategories.map(subsubcategory => (
-      <Button 
-        key={subsubcategory} 
-        onClick={() => {
-          const verses = versesData.filter(verse => verse.subsubcategory === subsubcategory).sort((a, b) => a.number - b.number);
-          dispatch({ type: 'SET_VERSES', payload: verses, subsubcategory });
-          dispatch({ type: 'SET_NAVIGATION_LEVEL', payload: 'verses' });
-        }} 
-        variant="outlined"
-        style={{ width: '400px', height: '60px', fontSize: '1rem' }}
-      >
-        {subsubcategory}
-      </Button>
-    ))}
-  </div>
-);
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
+      {state.subcategories.map(subcategory => (
+        <Button 
+          key={subcategory} 
+          onClick={() => {
+            const subsubcategories = [...new Set(versesData.filter(verse => 
+              verse.category === state.currentCategory && 
+              verse.subcategory === subcategory
+            ).map(verse => verse.subsubcategory))];
+            if (subsubcategories.length > 0 && subsubcategories[0] !== "") {
+              dispatch({ type: 'SET_SUBSUBCATEGORIES', payload: subsubcategories });
+              dispatch({ type: 'SET_CURRENT_SUBCATEGORY', payload: subcategory });
+              dispatch({ type: 'SET_NAVIGATION_LEVEL', payload: 'subsubcategories' });
+            } else {
+              const verses = versesData.filter(verse => 
+                verse.category === state.currentCategory && 
+                verse.subcategory === subcategory
+              ).sort((a, b) => a.number - b.number);
+              dispatch({ type: 'SET_VERSES', payload: verses });
+              dispatch({ type: 'SET_NAVIGATION_LEVEL', payload: 'verses' });
+            }
+          }} 
+          variant="outlined"
+          style={{ width: '400px', height: '60px', fontSize: '1rem' }}
+        >
+          {subcategory}
+        </Button>
+      ))}
+    </div>
+  );
+};
+
+export const renderSubsubcategories = (state, dispatch) => {
+  if (!state.subsubcategories || state.subsubcategories.length === 0) {
+    return <Typography>No subsubcategories available</Typography>;
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
+      {state.subsubcategories.map(subsubcategory => (
+        <Button 
+          key={subsubcategory} 
+          onClick={() => {
+            const verses = versesData.filter(verse => 
+              verse.category === state.currentCategory &&
+              verse.subcategory === state.currentSubcategory &&
+              verse.subsubcategory === subsubcategory
+            ).sort((a, b) => a.number - b.number);
+            dispatch({ type: 'SET_VERSES', payload: verses });
+            dispatch({ type: 'SET_NAVIGATION_LEVEL', payload: 'verses' });
+          }} 
+          variant="outlined"
+          style={{ width: '400px', height: '60px', fontSize: '1rem' }}
+        >
+          {subsubcategory}
+        </Button>
+      ))}
+    </div>
+  );
+};
 
 export const renderVerseList = (state, dispatch) => {
   let versesToRender;
@@ -111,6 +142,7 @@ export const renderVerseList = (state, dispatch) => {
                   {verse.category} &gt; {verse.subcategory} &gt; {verse.subsubcategory}
                 </Typography>
                 <Typography variant="h6">{verse.versename}</Typography>
+                
                 <Typography variant="subtitle1">
                   {`${verse.book} ${verse.chapter}:${verse.verse1}${verse.verse2 ? `-${verse.verse2}` : ''}`}
                   <span style={{ fontSize: '0.8em', marginLeft: '0.5rem' }}>

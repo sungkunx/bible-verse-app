@@ -45,6 +45,7 @@ const GameComponent = ({ state, dispatch }) => {
             {state.currentVerse.category} &gt; {state.currentVerse.subcategory} &gt; {state.currentVerse.subsubcategory}
           </Typography>
           <Typography variant="h6">{state.currentVerse.versename}</Typography>
+          
           <Typography variant="subtitle1">{`${state.currentVerse.book} ${state.currentVerse.chapter}:${state.currentVerse.verse1}${state.currentVerse.verse2 ? `-${state.currentVerse.verse2}` : ''}`}</Typography>
           
           {state.isCompleted && (
