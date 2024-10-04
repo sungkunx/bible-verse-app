@@ -1,0 +1,10 @@
+{
+  "files": {
+    "main.js": "/bible-verse-app/static/js/main.218d21f8.js",
+    "index.html": "/bible-verse-app/index.html",
+    "main.218d21f8.js.map": "/bible-verse-app/static/js/main.218d21f8.js.map"
+  },
+  "entrypoints": [
+    "static/js/main.218d21f8.js"
+  ]
+}
