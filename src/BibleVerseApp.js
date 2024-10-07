@@ -69,8 +69,9 @@ const BibleVerseApp = () => {
 
   const setViewMode = (mode) => {
     dispatch({ type: 'SET_VIEW_MODE', payload: mode });
-    if (mode === 'favorites' || mode === 'completed') {
-      dispatch({ type: 'SET_NAVIGATION_LEVEL', payload: 'verses' });
+    dispatch({ type: 'SET_NAVIGATION_LEVEL', payload: 'verses' });
+    if (state.gameMode) {
+      dispatch({ type: 'EXIT_GAME' });
     }
   };
 

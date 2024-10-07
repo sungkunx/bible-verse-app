@@ -103,7 +103,7 @@ const GameComponent = ({ state, dispatch }) => {
             <Button onClick={() => dispatch({ type: 'EXIT_GAME' })} variant="contained" color="secondary">
               게임 중단
             </Button>
-            <Button onClick={handleRandomVerse} variant="contained" color="primary">
+            <Button onClick={handleRandomVerse} variant="contained" style={{ backgroundColor: '#4caf50', color: 'white' }}>
               <Shuffle size={16} style={{ marginRight: '0.5rem' }} /> 다른 구절 하기
             </Button>
           </div>

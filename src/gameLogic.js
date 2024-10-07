@@ -12,10 +12,9 @@ export const renderCategories = (state, dispatch) => (
         dispatch({ type: 'START_GAME', payload: randomVerse });
       }}
       variant="contained"
-      color="secondary"
-      style={{ width: '400px', height: '80px', fontSize: '1.2rem', marginBottom: '2rem' }}
+      style={{ backgroundColor: '#4caf50', color: 'white', width: '400px', height: '80px', fontSize: '1.2rem', marginBottom: '2rem' }}
     >
-      <Shuffle size={24} style={{ marginRight: '0.5rem' }} /> 랜덤 구절로 게임 시작
+      <Shuffle size={24} style={{ marginRight: '0.5rem' }} /> 선택된 범위로 랜덤 구절 게임
     </Button>
     {state.categories.map(category => (
       <Button 
@@ -261,12 +260,11 @@ export const renderGameControls = (state, dispatch) => (
         dispatch({ type: 'START_GAME', payload: randomVerse });
       }}
       variant="contained"
-      color="secondary"
+      style={{ backgroundColor: '#4caf50', color: 'white' }}
       fullWidth
-      style={{ marginTop: '1rem' }}
     >
       <Shuffle size={24} style={{ marginRight: '0.5rem' }} /> 
-      랜덤 구절로 게임 시작
+      선택된 범위로 랜덤 구절 게임
     </Button>
   </div>
 );
