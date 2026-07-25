@@ -4,26 +4,26 @@
 
 ## 두 가지 버전
 
-**1. 단일 HTML (현재 주력) — `single/암송카드.html`**
+**1. 단일 HTML (현재 주력) — `index.html` / `single/암송카드.html`**
 
 빌드 없이 브라우저에서 바로 열리는 완결형 파일. 지금은 이 버전으로 UI/UX를
 빠르게 다듬는 중이며, 확정되면 React 버전으로 옮길 예정.
 
 - 소스: `single/template.html` (CSS/JS) — 데이터는 빌드 시 주입
-- 빌드: `python3 scripts/build_single.py` → `single/암송카드.html` 재생성
+- 빌드: `python3 scripts/build_single.py`
+  → `single/암송카드.html`과 루트 `index.html`(GitHub Pages용) 재생성
+- 배포: GitHub Pages를 main 브랜치 / (root)로 설정하면
+  루트 `index.html`이 곧 앱 → https://sungkunx.github.io/bible-verse-app/
 
 **2. React + Vite — `src/`**
 
-같은 구조의 React 구현 (추후 전환용 기준).
+같은 구조의 React 구현 (추후 전환용 기준). 개발 진입점은 `dev.html`.
 
 ```bash
 npm install
-npm run dev      # 개발 서버 (http://localhost:5173)
+npm run dev      # 개발 서버 → http://localhost:5173/dev.html
 npm run build    # 배포용 빌드 → dist/
 ```
-
-GitHub Pages에 배포하려면 `vite.config.js`의 `base`를 `'/저장소이름/'`으로 바꾸고
-`dist/`를 gh-pages 브랜치로 올리면 됩니다.
 
 ## 기능 (v0.2)
 

@@ -22,9 +22,10 @@ def main():
     tpl = open(os.path.join(ROOT, 'single/template.html'), encoding='utf-8').read()
     out = tpl.replace('/*__DATA_JSON__*/null', json.dumps(data, ensure_ascii=False, separators=(',', ':')))
     out = out.replace('/*__BOOKS_JSON__*/null', json.dumps(books, ensure_ascii=False, separators=(',', ':')))
-    dest = os.path.join(ROOT, 'single/암송카드.html')
-    open(dest, 'w', encoding='utf-8').write(out)
-    print(f'✓ {dest} ({len(out) // 1024} KB, {len(data["verses"])}구절)')
+    # 1) 단일 파일 배포본  2) GitHub Pages용 루트 index.html (같은 내용)
+    for dest in [os.path.join(ROOT, 'single/암송카드.html'), os.path.join(ROOT, 'index.html')]:
+        open(dest, 'w', encoding='utf-8').write(out)
+        print(f'✓ {dest} ({len(out) // 1024} KB, {len(data["verses"])}구절)')
 
 if __name__ == '__main__':
     main()
