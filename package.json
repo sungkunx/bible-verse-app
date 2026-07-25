@@ -1,44 +1,21 @@
 {
-    "name": "bible-verse-app",
-    "version": "1.0.0",
-    "private": true,
-    "homepage": "https://sungkunx.github.io/bible-verse-app",
-    "dependencies": {
-        "@emotion/react": "^11.x.x",
-        "@emotion/styled": "^11.x.x",
-        "@mui/material": "^5.x.x",
-        "lucide-react": "^0.x.x",
-        "react": "^17.x.x",
-        "react-dom": "^17.x.x",
-        "react-scripts": "^5.0.1"
-    },
-    "scripts": {
-        "start": "react-scripts start",
-        "build": "react-scripts build",
-        "test": "react-scripts test",
-        "eject": "react-scripts eject",
-        "predeploy": "npm run build",
-        "deploy": "gh-pages -d build"
-    },
-    "eslintConfig": {
-        "extends": [
-            "react-app",
-            "react-app/jest"
-        ]
-    },
-    "browserslist": {
-        "production": [
-            ">0.2%",
-            "not dead",
-            "not op_mini all"
-        ],
-        "development": [
-            "last 1 chrome version",
-            "last 1 firefox version",
-            "last 1 safari version"
-        ]
-    },
-    "devDependencies": {
-        "gh-pages": "^6.1.1"
-    }
+  "name": "bible-memory-cards",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "normalize-data": "python3 scripts/normalize.py"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.4",
+    "playwright": "^1.62.0",
+    "vite": "^5.4.11"
+  }
 }

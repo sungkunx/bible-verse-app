@@ -1,0 +1,772 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
+<meta name="theme-color" content="#f2f0ea" />
+<title>말씀 암송 카드</title>
+<style>
+/* ── 기본 ─────────────────────────────────────────── */
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+:root {
+  --fs: 1; /* 글자 크기 배율 (사용자 조절, JS에서 설정) */
+  --paper: #f2f0ea;
+  --card: #fffdfa;
+  --ink: #2b2a27;
+  --ink-soft: #6e6b64;
+  --ink-faint: #a09c93;
+  --line: #e4e1d8;
+  --star: #e0a52c;
+  --check: #2f9e63;
+}
+
+html, body { height: 100%; }
+body {
+  font-family: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont,
+    'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+  background: var(--paper);
+  color: var(--ink);
+  line-height: 1.5;
+  overscroll-behavior-y: none;
+}
+
+button { font: inherit; color: inherit; background: none; border: none; cursor: pointer; }
+
+.app { max-width: 480px; margin: 0 auto; min-height: 100dvh; display: flex; flex-direction: column; }
+.screen { display: flex; flex-direction: column; flex: 1; min-height: 100dvh; }
+
+/* ── 상단바 ───────────────────────────────────────── */
+.topbar {
+  display: flex; align-items: center; gap: 4px;
+  padding: calc(env(safe-area-inset-top) + 10px) 12px 10px;
+  position: sticky; top: 0; z-index: 10;
+  background: color-mix(in srgb, var(--paper) 88%, transparent);
+  backdrop-filter: blur(8px);
+}
+.topbar-title {
+  flex: 1; text-align: center; font-size: 1.02rem; font-weight: 700;
+  letter-spacing: -0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.topbar-side { display: flex; gap: 2px; min-width: 64px; }
+.topbar-right { justify-content: flex-end; }
+.icon-btn {
+  width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center;
+  color: var(--ink-soft);
+}
+.icon-btn:active { background: var(--line); }
+.pill-btn {
+  padding: 5px 12px; border-radius: 999px; border: 1px solid var(--line);
+  background: var(--card); font-size: 0.82rem; font-weight: 600; color: var(--ink-soft);
+}
+
+/* ── 홈 ───────────────────────────────────────────── */
+.home-main { padding: 8px 16px 32px; }
+.home-caption { font-size: 0.85rem; color: var(--ink-faint); margin: 10px 4px 10px; }
+.collection-list { display: flex; flex-direction: column; gap: 10px; }
+.collection-card {
+  display: flex; align-items: center; gap: 14px; text-align: left; width: 100%;
+  background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+  padding: 16px 14px; box-shadow: 0 1px 3px rgba(60, 50, 30, 0.06);
+  transition: transform 0.1s ease;
+}
+.collection-card:active { transform: scale(0.985); }
+.collection-stripe { width: 4px; align-self: stretch; border-radius: 4px; background: var(--accent); }
+.collection-info { flex: 1; display: flex; flex-direction: column; gap: 3px; }
+.collection-name { font-weight: 700; font-size: 0.98rem; letter-spacing: -0.01em; }
+.collection-meta { font-size: 0.8rem; color: var(--ink-faint); }
+.chevron { color: var(--ink-faint); font-size: 1.2rem; }
+
+.home-shortcuts { display: flex; gap: 10px; margin-top: 18px; }
+.shortcut-card {
+  flex: 1; display: flex; align-items: center; gap: 8px; justify-content: center;
+  background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+  padding: 14px 10px; font-weight: 600; font-size: 0.9rem;
+  box-shadow: 0 1px 3px rgba(60, 50, 30, 0.06);
+}
+.shortcut-icon.star { color: var(--star); }
+.shortcut-icon.check { color: var(--check); }
+.shortcut-count {
+  min-width: 24px; padding: 1px 7px; border-radius: 999px; background: var(--paper);
+  font-size: 0.8rem; color: var(--ink-soft);
+}
+
+/* ── 그룹(섹션) 목록 ──────────────────────────────── */
+.group-main { padding: 8px 16px 32px; display: flex; flex-direction: column; gap: 8px; }
+.group-row {
+  display: flex; align-items: center; gap: 12px; text-align: left; width: 100%;
+  background: var(--card); border: 1px solid var(--line); border-radius: 12px;
+  padding: 14px; box-shadow: 0 1px 3px rgba(60, 50, 30, 0.05);
+}
+.group-row:active { transform: scale(0.985); }
+.all-row .group-name { color: var(--accent); font-weight: 700; }
+.group-badge {
+  min-width: 30px; height: 30px; padding: 0 6px; display: grid; place-items: center;
+  border-radius: 9px; font-size: 0.8rem; font-weight: 700;
+  background: color-mix(in srgb, var(--accent) 12%, white); color: var(--accent);
+}
+.group-name { flex: 1; font-weight: 600; font-size: 0.92rem; letter-spacing: -0.01em; }
+.group-count { font-size: 0.78rem; color: var(--ink-faint); }
+
+/* ── 툴바: 카드/리스트 토글 + 글자 조절 ───────────── */
+.toolbar {
+  display: grid; grid-template-columns: 1fr auto 1fr; align-items: center;
+  margin: 4px 0 2px; padding: 0 14px;
+}
+.mode-toggle {
+  grid-column: 2; display: flex; gap: 4px; padding: 4px;
+  background: #e9e6de; border-radius: 999px;
+}
+.mode-toggle button {
+  padding: 6px 22px; border-radius: 999px; font-size: 0.85rem; font-weight: 600;
+  color: var(--ink-soft);
+}
+.mode-toggle button.on { background: var(--card); color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+.font-controls { grid-column: 3; justify-self: end; display: flex; align-items: center; gap: 4px; }
+.font-btn {
+  width: 32px; height: 32px; border-radius: 50%; font-size: 1.05rem; line-height: 1;
+  background: var(--card); border: 1px solid var(--line); color: var(--ink-soft);
+  box-shadow: 0 1px 2px rgba(60, 50, 30, 0.07); display: grid; place-items: center;
+}
+.font-btn:disabled { opacity: 0.3; }
+.font-btn .ga { font-size: 0.62rem; font-weight: 700; margin-right: 1px; }
+
+/* ── 카드 덱 ──────────────────────────────────────── */
+.deck-area { flex: 1; display: flex; flex-direction: column; padding: 12px 20px 24px; }
+.deck {
+  position: relative; flex: 1; min-height: 380px; max-height: 560px;
+  touch-action: pan-y; user-select: none; -webkit-user-select: none;
+}
+.deck-under, .deck-current, .deck-leaving, .card3d { position: absolute; inset: 0; }
+.deck-under {
+  background: var(--card); border: 1px solid var(--line); border-radius: 16px;
+  box-shadow: 0 2px 6px rgba(60, 50, 30, 0.07);
+}
+.under-1 { transform: translateY(7px) scale(0.975); }
+.under-2 { transform: translateY(13px) scale(0.95); }
+.deck-current { z-index: 2; will-change: transform; }
+.deck-leaving { z-index: 3; pointer-events: none; will-change: transform, opacity; }
+
+/* 실물 카드 */
+.card3d { perspective: 1200px; }
+.card-inner {
+  position: absolute; inset: 0; transform-style: preserve-3d;
+  transition: transform 0.45s cubic-bezier(0.25, 0.8, 0.3, 1);
+}
+.card3d.flipped .card-inner { transform: rotateY(180deg); }
+.card-face {
+  position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden;
+  display: flex; flex-direction: column;
+  background: var(--card); border: 1px solid var(--line); border-radius: 16px;
+  padding: 22px 20px 14px;
+  box-shadow: 0 10px 24px rgba(60, 50, 30, 0.13), 0 2px 5px rgba(60, 50, 30, 0.08);
+  overflow: hidden;
+}
+.card-back { transform: rotateY(180deg); }
+
+.card-head { border-bottom: 1.5px solid var(--accent); padding-bottom: 10px; margin-bottom: 14px; }
+.card-title { color: var(--accent); font-size: calc(1.3rem * var(--fs)); font-weight: 800; letter-spacing: -0.01em; }
+.card-ref { margin-top: 4px; font-size: calc(0.95rem * var(--fs)); color: var(--ink-soft); font-weight: 600; }
+
+.card-body {
+  flex: 1; font-size: calc(1.25rem * var(--fs)); line-height: 1.8; letter-spacing: -0.004em;
+  color: var(--ink); word-break: keep-all; overflow-y: auto;
+  touch-action: pan-y; -webkit-overflow-scrolling: touch; overscroll-behavior: contain;
+}
+.card-note { font-size: 0.85rem; color: var(--ink-faint); margin-top: 8px; }
+
+.card-foot {
+  display: flex; justify-content: space-between; align-items: center; gap: 8px;
+  border-top: 1px solid var(--line); margin-top: 12px; padding-top: 10px;
+  font-size: 0.86rem; color: var(--ink-faint);
+}
+.card-code { font-weight: 700; color: var(--accent); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.card-code em { font-style: normal; font-weight: 500; color: var(--ink-faint); margin-left: 4px; }
+.card-foot-ref { white-space: nowrap; }
+
+.card-back-center {
+  flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
+}
+.card-back-ref { font-size: calc(1.6rem * var(--fs)); font-weight: 800; color: var(--ink); letter-spacing: -0.01em; }
+.card-back-hint { font-size: 0.9rem; color: var(--ink-faint); }
+
+/* 덱 컨트롤 */
+.deck-controls { display: flex; align-items: center; justify-content: center; gap: 14px; margin-top: 18px; }
+.deck-counter { font-size: 0.95rem; font-weight: 700; min-width: 64px; text-align: center; }
+.deck-counter em { font-style: normal; color: var(--ink-faint); font-weight: 500; }
+.nav-btn {
+  width: 44px; height: 44px; border-radius: 50%; font-size: 1.5rem; line-height: 1;
+  background: var(--card); border: 1px solid var(--line); color: var(--ink-soft);
+  box-shadow: 0 1px 3px rgba(60, 50, 30, 0.08);
+}
+.nav-btn:disabled { opacity: 0.35; }
+.action-btn {
+  width: 44px; height: 44px; border-radius: 50%; font-size: 1.15rem;
+  background: var(--card); border: 1px solid var(--line); color: #c9c5bb;
+  box-shadow: 0 1px 3px rgba(60, 50, 30, 0.08);
+}
+.action-btn.star-on { color: var(--star); border-color: color-mix(in srgb, var(--star) 45%, var(--line)); }
+.action-btn.check-on { color: var(--check); border-color: color-mix(in srgb, var(--check) 45%, var(--line)); }
+.deck-hint { text-align: center; font-size: 0.74rem; color: var(--ink-faint); margin-top: 12px; }
+
+/* ── 리스트 뷰 ────────────────────────────────────── */
+.verse-list { padding: 8px 14px 32px; display: flex; flex-direction: column; gap: 8px; }
+.verse-row {
+  display: flex; background: var(--card); border: 1px solid var(--line); border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(60, 50, 30, 0.05); overflow: hidden;
+}
+.verse-row-main { flex: 1; text-align: left; padding: 12px 0 12px 14px; min-width: 0; }
+.verse-row-top { display: flex; align-items: baseline; gap: 8px; }
+.verse-row-code { font-size: calc(0.85rem * var(--fs)); font-weight: 700; color: var(--accent); flex-shrink: 0; }
+.verse-row-title {
+  font-weight: 700; font-size: calc(1.08rem * var(--fs)); letter-spacing: -0.01em;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.verse-row-ref { margin-left: auto; font-size: calc(0.9rem * var(--fs)); color: var(--ink-faint); flex-shrink: 0; }
+.verse-row-text {
+  margin-top: 5px; font-size: calc(0.98rem * var(--fs)); color: var(--ink-soft); line-height: 1.55;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  word-break: keep-all;
+}
+.verse-row-actions { display: flex; flex-direction: column; justify-content: center; padding: 6px 8px; gap: 2px; }
+.row-action { width: 32px; height: 32px; border-radius: 8px; color: #d5d1c7; font-size: 0.95rem; }
+.row-action.star-on { color: var(--star); }
+.row-action.check-on { color: var(--check); }
+
+.empty-note { text-align: center; color: var(--ink-faint); padding: 48px 0; font-size: 0.9rem; }
+
+@media (max-height: 700px) {
+  .deck { min-height: 320px; }
+}
+</style>
+</head>
+<body>
+<div class="app"><div class="screen" id="root"></div></div>
+<script>
+'use strict';
+
+/* ════════════════════════════════════════════════════
+ * 데이터 (빌드 시 주입: collections + verses 495구절)
+ * ref(성경 주소)가 정식 데이터, texts는 캐시.
+ * 나중에 전체 성경 DB 연동 시 getVerseText만 교체하면 됨.
+ * ════════════════════════════════════════════════════ */
+const DATA = /*__DATA_JSON__*/null;
+
+/* 성경 66권 표준 테이블 (OSIS id) */
+const BOOKS = /*__BOOKS_JSON__*/null;
+
+const collections = DATA.collections;
+const verses = DATA.verses;
+const verseById = new Map(verses.map(v => [v.id, v]));
+
+/* ── 참조 표기 ─────────────────────────────────── */
+function fmtVerseNums(list, lang) {
+  return list.map(seg => {
+    let s = String(seg.start);
+    if (seg.end) s += '-' + seg.end;
+    if (seg.suffix) s += (lang === 'ko' ? seg.suffix : (seg.suffix === '상' ? 'a' : 'b'));
+    return s;
+  }).join(',');
+}
+function fmtRef(ref, lang, style) {
+  const b = BOOKS[ref.book];
+  const name = !b ? ref.book : (lang === 'en' ? b.en : (style === 'abbr' ? b.koAbbr : b.ko));
+  return name + ' ' + ref.chapter + ':' + fmtVerseNums(ref.verses, lang);
+}
+
+/* ── 본문 텍스트 공급자 ─────────────────────────────
+ * 지금은 내장 텍스트. 전체 성경 DB가 준비되면 이 함수만
+ * ref(book/chapter/verses) 기반 조회로 교체하면 된다. */
+function getVerseText(v, lang) { return (v.texts && v.texts[lang]) || null; }
+
+/* ── 저장소 (localStorage 불가 환경에서도 동작) ──── */
+const mem = {};
+function loadSet(k) {
+  try { const raw = localStorage.getItem('bmc.' + k + '.v1'); return new Set(raw ? JSON.parse(raw) : []); }
+  catch (e) { return new Set(mem[k] || []); }
+}
+function saveSet(k, set) {
+  mem[k] = [...set];
+  try { localStorage.setItem('bmc.' + k + '.v1', JSON.stringify([...set])); } catch (e) {}
+}
+
+/* ── 글자 크기 배율 (사용자 조절, 저장됨) ────────── */
+const FS_MIN = 0.7, FS_MAX = 1.6, FS_STEP = 0.1;
+function loadFontScale() {
+  try {
+    const v = parseFloat(localStorage.getItem('bmc.fontScale.v1'));
+    if (v >= FS_MIN && v <= FS_MAX) return v;
+  } catch (e) {}
+  return 1;
+}
+function applyFontScale(v) {
+  document.documentElement.style.setProperty('--fs', v);
+  try { localStorage.setItem('bmc.fontScale.v1', String(v)); } catch (e) {}
+}
+
+/* ── 상태 ─────────────────────────────────────── */
+const state = {
+  stack: [{ name: 'home' }],
+  lang: 'ko',
+  fav: loadSet('favorites'),
+  done: loadSet('completed'),
+  mode: 'card',
+  index: 0,
+  flipped: false,
+  fontScale: loadFontScale(),
+};
+applyFontScale(state.fontScale);
+const cur = () => state.stack[state.stack.length - 1];
+
+function push(s) {
+  state.stack.push(s);
+  if (s.name === 'verses') { state.mode = 'card'; state.index = s.startIndex || 0; state.flipped = false; }
+  render();
+}
+function pop() { if (state.stack.length > 1) { state.stack.pop(); render(); } }
+function goHome() { state.stack = [{ name: 'home' }]; render(); }
+
+const getCollection = id => collections.find(c => c.id === id);
+
+function selectVerses(f) {
+  return verses.filter(v =>
+    (!f.collectionId || v.collectionId === f.collectionId) &&
+    (!f.sectionId || v.sectionId === f.sectionId) &&
+    (!f.subsectionId || v.subsectionId === f.subsectionId));
+}
+function currentVerses() {
+  const s = cur();
+  if (s.kind === 'favorites') return [...state.fav].map(id => verseById.get(id)).filter(Boolean);
+  if (s.kind === 'completed') return [...state.done].map(id => verseById.get(id)).filter(Boolean);
+  return selectVerses(s);
+}
+
+function cardFooter(v) {
+  const col = getCollection(v.collectionId);
+  const sec = col.sections.find(s => s.id === v.sectionId);
+  const sub = sec && sec.subsections.find(s => s.id === v.subsectionId);
+  return {
+    code: v.code.replace(/^s/, ''),
+    groupName: (sub && sub.name) || (sec && sec.name) || col.shortName,
+    color: col.color,
+  };
+}
+
+/* ── HTML 헬퍼 ────────────────────────────────── */
+const esc = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+const ICON_BACK = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>';
+const ICON_HOME = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>';
+
+function topbarHTML(title, opts) {
+  opts = opts || {};
+  return '<header class="topbar">' +
+    '<div class="topbar-side">' +
+    (opts.back ? '<button class="icon-btn" data-action="back" aria-label="뒤로">' + ICON_BACK + '</button>' : '') +
+    (opts.home ? '<button class="icon-btn" data-action="go-home" aria-label="홈">' + ICON_HOME + '</button>' : '') +
+    '</div>' +
+    '<h1 class="topbar-title">' + esc(title) + '</h1>' +
+    '<div class="topbar-side topbar-right">' +
+    (opts.lang ? '<button class="pill-btn" data-action="lang">' + (state.lang === 'ko' ? 'En' : '한') + '</button>' : '') +
+    '</div></header>';
+}
+
+/* ── 홈 화면 ──────────────────────────────────── */
+function homeHTML() {
+  const cols = collections.map(c =>
+    '<button class="collection-card" style="--accent:' + c.color + '" data-action="open-col" data-id="' + c.id + '">' +
+    '<span class="collection-stripe"></span>' +
+    '<span class="collection-info">' +
+    '<span class="collection-name">' + esc(c.name) + '</span>' +
+    '<span class="collection-meta">' + c.verseCount + '구절' + (c.sections.length ? ' · ' + c.sections.length + '개 주제' : '') + '</span>' +
+    '</span><span class="chevron">›</span></button>').join('');
+  return topbarHTML('말씀 암송 카드', { lang: true }) +
+    '<main class="home-main">' +
+    '<p class="home-caption">암송집을 선택하세요</p>' +
+    '<div class="collection-list">' + cols + '</div>' +
+    '<div class="home-shortcuts">' +
+    '<button class="shortcut-card" data-action="open-kind" data-kind="favorites"><span class="shortcut-icon star">★</span>즐겨찾기<span class="shortcut-count">' + state.fav.size + '</span></button>' +
+    '<button class="shortcut-card" data-action="open-kind" data-kind="completed"><span class="shortcut-icon check">✓</span>암송완료<span class="shortcut-count">' + state.done.size + '</span></button>' +
+    '</div></main>';
+}
+
+/* ── 그룹(섹션/서브섹션) 화면 ─────────────────── */
+function groupHTML(s) {
+  const col = getCollection(s.collectionId);
+  const section = s.sectionId ? col.sections.find(x => x.id === s.sectionId) : null;
+  let rows = '';
+  if (!section) {
+    rows += '<button class="group-row all-row" data-action="open-verses" data-col="' + col.id + '">' +
+      '<span class="group-name">전체 보기</span><span class="group-count">' + col.verseCount + '구절</span><span class="chevron">›</span></button>';
+    rows += col.sections.map(sec => {
+      const count = selectVerses({ collectionId: col.id, sectionId: sec.id }).length;
+      const hasSubs = sec.subsections && sec.subsections.length;
+      return '<button class="group-row" data-action="' + (hasSubs ? 'open-group' : 'open-verses') + '" data-col="' + col.id + '" data-sec="' + sec.id + '">' +
+        '<span class="group-badge">' + esc(sec.id.split('-').pop().toUpperCase()) + '</span>' +
+        '<span class="group-name">' + esc(sec.name) + '</span>' +
+        '<span class="group-count">' + count + '구절</span><span class="chevron">›</span></button>';
+    }).join('');
+  } else {
+    rows += section.subsections.map(sub => {
+      const count = selectVerses({ collectionId: col.id, subsectionId: sub.id }).length;
+      return '<button class="group-row" data-action="open-verses" data-col="' + col.id + '" data-sec="' + section.id + '" data-sub="' + sub.id + '">' +
+        '<span class="group-badge">' + esc(sub.id.split('-').pop()) + '</span>' +
+        '<span class="group-name">' + esc(sub.name) + '</span>' +
+        '<span class="group-count">' + count + '구절</span><span class="chevron">›</span></button>';
+    }).join('');
+  }
+  return topbarHTML(section ? section.name : col.name, { back: true, home: true }) +
+    '<main class="group-main" style="--accent:' + col.color + '">' + rows + '</main>';
+}
+
+/* ── 카드 마크업 ──────────────────────────────── */
+function cardHTML(v) {
+  const f = cardFooter(v);
+  const refFull = fmtRef(v.ref, state.lang, 'full');
+  const text = getVerseText(v, state.lang);
+  const fallback = !text && state.lang === 'en';
+  const body = text || getVerseText(v, 'ko') || '';
+  return '<div class="card3d' + (state.flipped ? ' flipped' : '') + '" style="--accent:' + f.color + '">' +
+    '<div class="card-inner">' +
+    '<div class="card-face card-front">' +
+    '<div class="card-head"><h2 class="card-title">' + esc(v.title) + '</h2>' +
+    '<div class="card-ref">' + esc(refFull) + '</div></div>' +
+    '<p class="card-body">' + esc(body) + '</p>' +
+    (fallback ? '<div class="card-note">영어 본문이 아직 없어 한국어로 표시합니다</div>' : '') +
+    '<div class="card-foot"><span class="card-code">' + esc(f.code) + ' <em>' + esc(f.groupName) + '</em></span>' +
+    '<span class="card-foot-ref">' + esc(refFull) + '</span></div>' +
+    '</div>' +
+    '<div class="card-face card-back">' +
+    '<div class="card-head"><h2 class="card-title">' + esc(v.title) + '</h2></div>' +
+    '<div class="card-back-center"><div class="card-back-ref">' + esc(refFull) + '</div>' +
+    '<div class="card-back-hint">본문을 떠올려 보세요 · 탭하면 본문 보기</div></div>' +
+    '<div class="card-foot"><span class="card-code">' + esc(f.code) + ' <em>' + esc(f.groupName) + '</em></span></div>' +
+    '</div></div></div>';
+}
+
+/* ── 구절 화면 (카드/리스트) ──────────────────── */
+function verseScreenHTML(s, list) {
+  let inner;
+  if (!list.length) {
+    inner = '<p class="empty-note">아직 담긴 구절이 없습니다</p>';
+  } else if (state.mode === 'card') {
+    inner =
+      '<div class="deck-area"><div class="deck" id="deck">' +
+      '<div class="deck-under under-2" id="under2"></div>' +
+      '<div class="deck-under under-1" id="under1"></div>' +
+      '<div class="deck-current" id="deckCurrent"></div>' +
+      '</div>' +
+      '<div class="deck-controls">' +
+      '<button class="nav-btn" data-action="prev" id="btnPrev">‹</button>' +
+      '<button class="action-btn" data-action="fav" id="btnFav">★</button>' +
+      '<span class="deck-counter" id="counter"></span>' +
+      '<button class="action-btn" data-action="done" id="btnDone">✓</button>' +
+      '<button class="nav-btn" data-action="next" id="btnNext">›</button>' +
+      '</div>' +
+      '<p class="deck-hint">카드를 탭하면 본문이 가려집니다 · 좌우로 넘겨보세요</p></div>';
+  } else {
+    inner = '<div class="verse-list">' + list.map((v, i) => {
+      const f = cardFooter(v);
+      const text = getVerseText(v, state.lang) || getVerseText(v, 'ko') || '';
+      return '<div class="verse-row" style="--accent:' + f.color + '">' +
+        '<button class="verse-row-main" data-action="open-card" data-idx="' + i + '">' +
+        '<div class="verse-row-top"><span class="verse-row-code">' + esc(f.code) + '</span>' +
+        '<span class="verse-row-title">' + esc(v.title) + '</span>' +
+        '<span class="verse-row-ref">' + esc(fmtRef(v.ref, state.lang, 'abbr')) + '</span></div>' +
+        '<p class="verse-row-text">' + esc(text) + '</p></button>' +
+        '<div class="verse-row-actions">' +
+        '<button class="row-action' + (state.fav.has(v.id) ? ' star-on' : '') + '" data-action="row-fav" data-id="' + v.id + '">★</button>' +
+        '<button class="row-action' + (state.done.has(v.id) ? ' check-on' : '') + '" data-action="row-done" data-id="' + v.id + '">✓</button>' +
+        '</div></div>';
+    }).join('') + '</div>';
+  }
+  return topbarHTML(s.title, { back: true, home: true, lang: true }) +
+    '<div class="toolbar">' +
+    '<div class="mode-toggle">' +
+    '<button data-action="mode-card" class="' + (state.mode === 'card' ? 'on' : '') + '">카드</button>' +
+    '<button data-action="mode-list" class="' + (state.mode === 'list' ? 'on' : '') + '">리스트</button>' +
+    '</div>' +
+    '<div class="font-controls">' +
+    '<button class="font-btn" data-action="font-dec" aria-label="글자 작게"' + (state.fontScale <= FS_MIN + 0.001 ? ' disabled' : '') + '><span class="ga">가</span>−</button>' +
+    '<button class="font-btn" data-action="font-inc" aria-label="글자 크게"' + (state.fontScale >= FS_MAX - 0.001 ? ' disabled' : '') + '><span class="ga">가</span>+</button>' +
+    '</div></div>' + inner;
+}
+
+/* ── 덱 갱신 (카드 넘김/체크 시 부분 갱신) ─────── */
+function updateDeck(fromStack) {
+  const list = currentVerses();
+  if (state.index >= list.length) state.index = Math.max(0, list.length - 1);
+  const v = list[state.index];
+  const el = document.getElementById('deckCurrent');
+  if (!el || !v) return;
+  el.style.transition = 'none';
+  el.innerHTML = cardHTML(v);
+  if (fromStack) {
+    // 뒤 카드뭉치 위치에서 앞으로 올라오는 연출
+    el.style.transform = 'translateY(7px) scale(0.975)';
+    el.offsetHeight; // 강제 리플로우 — 드래그하던 위치가 아니라 이 위치에서 시작
+    el.style.transition = 'transform 0.24s ease-out';
+    el.style.transform = '';
+  } else {
+    el.style.transform = '';
+  }
+  document.getElementById('under1').style.display = state.index + 1 < list.length ? '' : 'none';
+  document.getElementById('under2').style.display = state.index + 2 < list.length ? '' : 'none';
+  document.getElementById('counter').innerHTML = (state.index + 1) + ' <em>/ ' + list.length + '</em>';
+  document.getElementById('btnPrev').disabled = state.index === 0;
+  document.getElementById('btnNext').disabled = state.index >= list.length - 1;
+  document.getElementById('btnFav').className = 'action-btn' + (state.fav.has(v.id) ? ' star-on' : '');
+  document.getElementById('btnDone').className = 'action-btn' + (state.done.has(v.id) ? ' check-on' : '');
+  fitCardBody();
+}
+
+/* 본문이 카드에 안 들어가면 글자를 단계적으로 줄여서 맞춘다.
+ * (최소 68%까지 — 그래도 넘치면 스크롤로 본다) */
+function fitCardBody() {
+  const body = document.querySelector('#deckCurrent .card-front .card-body');
+  if (!body) return;
+  body.style.fontSize = '';
+  body.style.lineHeight = '';
+  const base = parseFloat(getComputedStyle(body).fontSize);
+  let k = 1;
+  while (body.scrollHeight > body.clientHeight + 1 && k > 0.68) {
+    k -= 0.04;
+    body.style.fontSize = (base * k).toFixed(2) + 'px';
+    if (k < 0.85) body.style.lineHeight = '1.65';
+  }
+}
+
+/* 카드 넘김: 잔상은 "드래그하던 그 위치"에서 이어서 날아가고,
+ * 새 카드는 뒤 카드뭉치에서 한 장 올라오듯 나타난다.
+ * (잔상이 가운데로 되돌아간 뒤 날아가면 두 장이 움직이는 느낌이 남) */
+function goCard(dir, fromDx) {
+  const list = currentVerses();
+  const next = state.index + dir;
+  if (next < 0 || next >= list.length) { resetCardTransform(); return; }
+  fromDx = fromDx || 0;
+  const deck = document.getElementById('deck');
+  const curEl = document.getElementById('deckCurrent');
+  if (deck && curEl) {
+    const ghost = document.createElement('div');
+    ghost.className = 'deck-leaving';
+    ghost.innerHTML = curEl.innerHTML;
+    // 시작 위치 = 현재 드래그 위치
+    ghost.style.transform = 'translateX(' + fromDx + 'px) rotate(' + fromDx * 0.04 + 'deg)';
+    ghost.style.opacity = '1';
+    deck.appendChild(ghost);
+    ghost.offsetHeight; // 강제 리플로우 — 시작 위치를 확정시켜야 transition이 걸림
+    ghost.style.transition = 'transform 0.24s ease-out, opacity 0.24s ease-out';
+    ghost.style.transform = 'translateX(' + (dir > 0 ? -120 : 120) + '%) rotate(' + (dir > 0 ? -7 : 7) + 'deg)';
+    ghost.style.opacity = '0.3';
+    setTimeout(() => ghost.remove(), 300);
+  }
+  state.index = next;
+  state.flipped = false;
+  updateDeck(true);
+}
+
+function toggleSet(kind, id) {
+  const set = kind === 'fav' ? state.fav : state.done;
+  set.has(id) ? set.delete(id) : set.add(id);
+  saveSet(kind === 'fav' ? 'favorites' : 'completed', set);
+}
+
+/* ── 렌더 ─────────────────────────────────────── */
+const root = document.getElementById('root');
+function render() {
+  const s = cur();
+  if (s.name === 'home') root.innerHTML = homeHTML();
+  else if (s.name === 'group') root.innerHTML = groupHTML(s);
+  else {
+    root.innerHTML = verseScreenHTML(s, currentVerses());
+    if (state.mode === 'card') updateDeck();
+  }
+  window.scrollTo(0, 0);
+}
+
+/* ── 이벤트 (위임) ────────────────────────────── */
+document.addEventListener('click', e => {
+  const btn = e.target.closest('[data-action]');
+  if (!btn) return;
+  const a = btn.dataset.action;
+  const s = cur();
+  if (a === 'back') pop();
+  else if (a === 'go-home') goHome();
+  else if (a === 'lang') { state.lang = state.lang === 'ko' ? 'en' : 'ko'; render(); }
+  else if (a === 'open-col') {
+    const col = getCollection(btn.dataset.id);
+    if (!col.sections.length) push({ name: 'verses', collectionId: col.id, title: col.name });
+    else push({ name: 'group', collectionId: col.id });
+  }
+  else if (a === 'open-kind') {
+    push({ name: 'verses', kind: btn.dataset.kind, title: btn.dataset.kind === 'favorites' ? '즐겨찾기' : '암송완료' });
+  }
+  else if (a === 'open-group') push({ name: 'group', collectionId: btn.dataset.col, sectionId: btn.dataset.sec });
+  else if (a === 'open-verses') {
+    const col = getCollection(btn.dataset.col);
+    const sec = btn.dataset.sec && col.sections.find(x => x.id === btn.dataset.sec);
+    const sub = sec && btn.dataset.sub && sec.subsections.find(x => x.id === btn.dataset.sub);
+    push({
+      name: 'verses', collectionId: col.id,
+      sectionId: btn.dataset.sec || null, subsectionId: btn.dataset.sub || null,
+      title: sub ? sub.name : (sec ? sec.name : (btn.dataset.sec ? '' : col.shortName + ' 전체')),
+    });
+  }
+  else if (a === 'mode-card') { state.mode = 'card'; render(); }
+  else if (a === 'mode-list') { state.mode = 'list'; render(); }
+  else if (a === 'font-inc' || a === 'font-dec') {
+    const d = a === 'font-inc' ? FS_STEP : -FS_STEP;
+    state.fontScale = Math.round(Math.min(FS_MAX, Math.max(FS_MIN, state.fontScale + d)) * 10) / 10;
+    applyFontScale(state.fontScale);
+    render(); // 버튼 활성 상태 갱신 + 카드 자동 맞춤 재계산
+  }
+  else if (a === 'open-card') { state.mode = 'card'; state.index = +btn.dataset.idx; state.flipped = false; render(); }
+  else if (a === 'prev') goCard(-1);
+  else if (a === 'next') goCard(1);
+  else if (a === 'fav' || a === 'done') {
+    const v = currentVerses()[state.index];
+    if (v) { toggleSet(a, v.id); s.kind ? render() : updateDeck(); }
+  }
+  else if (a === 'row-fav' || a === 'row-done') {
+    toggleSet(a === 'row-fav' ? 'fav' : 'done', btn.dataset.id);
+    render();
+  }
+});
+
+/* ── 덱 스와이프 + 탭 뒤집기 ─────────────────────
+ * 터치는 touch 이벤트로 직접 처리하고, 첫 움직임에서
+ * 가로/세로 방향을 잠근다. 가로로 판정되면 preventDefault로
+ * 브라우저 스크롤 가로채기를 막아 끝까지 우리가 제어한다.
+ * (기존 pointer 이벤트 방식은 손가락이 조금만 비스듬해도
+ *  브라우저가 스크롤로 가져가며 pointercancel로 끊겼음) */
+let drag = null;
+
+function setCardTransform(dx) {
+  const el = document.getElementById('deckCurrent');
+  if (!el) return;
+  el.style.transition = 'none';
+  el.style.transform = 'translateX(' + dx + 'px) rotate(' + dx * 0.04 + 'deg)';
+}
+function resetCardTransform() {
+  const el = document.getElementById('deckCurrent');
+  if (el) { el.style.transition = 'transform 0.25s ease'; el.style.transform = ''; }
+}
+function dampedDx(dx) {
+  const list = currentVerses();
+  const atEdge = (dx > 0 && state.index === 0) || (dx < 0 && state.index >= list.length - 1);
+  return atEdge ? dx * 0.3 : dx; // 끝 카드에서는 저항감
+}
+
+function dragStart(x, y, target) {
+  // 터치 시작 지점의 스크롤 가능한 본문 (세로 드래그 시 직접 스크롤)
+  let scrollEl = null;
+  if (target && target.closest) {
+    const body = target.closest('.card-body');
+    if (body && body.scrollHeight > body.clientHeight + 1) scrollEl = body;
+  }
+  drag = { x, y, lock: null, t: Date.now(), lastX: x, lastT: Date.now(), vx: 0,
+           scrollEl, scrollTop: scrollEl ? scrollEl.scrollTop : 0 };
+}
+function dragMove(x, y, e) {
+  if (!drag) return;
+  const dx = x - drag.x, dy = y - drag.y;
+  if (!drag.lock) {
+    if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return; // 아직 판정 전
+    drag.lock = Math.abs(dx) >= Math.abs(dy) ? 'h' : 'v';
+  }
+  if (drag.lock !== 'h') {
+    // 세로: 본문이 스크롤 가능하면 직접 스크롤 (3D 카드 구조에서
+    // 브라우저 기본 스크롤이 안 먹는 기기 대응)
+    if (drag.scrollEl) {
+      if (e && e.cancelable) e.preventDefault();
+      drag.scrollEl.scrollTop = drag.scrollTop - dy;
+    }
+    return;
+  }
+  if (e && e.cancelable) e.preventDefault();
+  const now = Date.now();
+  if (now > drag.lastT) drag.vx = (x - drag.lastX) / (now - drag.lastT);
+  drag.lastX = x; drag.lastT = now;
+  setCardTransform(dampedDx(dx));
+}
+function dragEnd(x) {
+  if (!drag) return false;
+  const d = drag; drag = null;
+  const dx = x - d.x;
+  const dt = Date.now() - d.t;
+
+  if (d.lock === 'h') {
+    const deckEl = document.getElementById('deck');
+    const width = deckEl ? deckEl.offsetWidth : 320;
+    const threshold = Math.min(60, width * 0.18);
+    // 플릭 판정: 마지막 순간 속도 또는 제스처 전체 평균 속도
+    const avx = dt > 0 ? dx / dt : 0;
+    const flick = (Math.abs(d.vx) > 0.25 || Math.abs(avx) > 0.35) &&
+      Math.abs(dx) > 15 && (d.vx === 0 || (d.vx < 0) === (dx < 0));
+    const list = currentVerses();
+    if ((dx < -threshold || (flick && dx < 0)) && state.index < list.length - 1) { goCard(1, dx); return true; }
+    if ((dx > threshold || (flick && dx > 0)) && state.index > 0) { goCard(-1, dx); return true; }
+    resetCardTransform();
+    return true; // 가로 드래그였으면 탭으로 치지 않음
+  }
+  if (!d.lock && dt < 400) { // 탭 → 뒤집기
+    state.flipped = !state.flipped;
+    const card = document.querySelector('#deckCurrent .card3d');
+    if (card) card.classList.toggle('flipped', state.flipped);
+    return true;
+  }
+  resetCardTransform();
+  return false;
+}
+function dragCancel() { drag = null; resetCardTransform(); }
+
+/* 터치 (모바일) */
+document.addEventListener('touchstart', e => {
+  if (!e.target.closest('#deck')) return;
+  if (e.touches.length !== 1) { dragCancel(); return; }
+  dragStart(e.touches[0].clientX, e.touches[0].clientY, e.target);
+}, { passive: true });
+document.addEventListener('touchmove', e => {
+  if (!drag) return;
+  dragMove(e.touches[0].clientX, e.touches[0].clientY, e);
+}, { passive: false });
+document.addEventListener('touchend', e => {
+  if (!drag) return;
+  const handled = dragEnd(e.changedTouches[0].clientX);
+  if (handled && e.cancelable) e.preventDefault(); // 고스트 클릭 방지
+}, { passive: false });
+document.addEventListener('touchcancel', dragCancel);
+
+/* 마우스 (데스크톱) */
+let mouseDown = false;
+document.addEventListener('mousedown', e => {
+  if (!e.target.closest('#deck')) return;
+  mouseDown = true;
+  dragStart(e.clientX, e.clientY, e.target);
+});
+document.addEventListener('mousemove', e => {
+  if (mouseDown) dragMove(e.clientX, e.clientY, null);
+});
+document.addEventListener('mouseup', e => {
+  if (!mouseDown) return;
+  mouseDown = false;
+  dragEnd(e.clientX);
+});
+
+/* 키보드 (데스크톱) */
+document.addEventListener('keydown', e => {
+  if (cur().name !== 'verses' || state.mode !== 'card') return;
+  if (e.key === 'ArrowLeft') goCard(-1);
+  else if (e.key === 'ArrowRight') goCard(1);
+  else if (e.key === ' ') {
+    e.preventDefault();
+    state.flipped = !state.flipped;
+    const card = document.querySelector('#deckCurrent .card3d');
+    if (card) card.classList.toggle('flipped', state.flipped);
+  }
+});
+
+render();
+</script>
+</body>
+</html>
