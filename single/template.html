@@ -235,6 +235,36 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 
 .empty-note { text-align: center; color: var(--ink-faint); padding: 48px 0; font-size: 0.9rem; }
 
+/* ── 역본 선택 시트 ───────────────────────────────── */
+.sheet-overlay {
+  position: fixed; inset: 0; z-index: 100;
+  background: rgba(40, 36, 28, 0.35);
+  display: flex; align-items: flex-end; justify-content: center;
+  animation: fadeIn 0.15s ease;
+}
+@keyframes fadeIn { from { opacity: 0; } }
+.sheet {
+  width: 100%; max-width: 480px; max-height: 72dvh; overflow-y: auto;
+  background: var(--card); border-radius: 18px 18px 0 0;
+  padding: 10px 14px calc(env(safe-area-inset-bottom) + 18px);
+  animation: slideUp 0.2s ease;
+}
+@keyframes slideUp { from { transform: translateY(40px); opacity: 0.6; } }
+.sheet-title {
+  text-align: center; font-size: 0.85rem; font-weight: 700; color: var(--ink-faint);
+  padding: 8px 0 10px;
+}
+.sheet-item {
+  display: flex; align-items: center; gap: 10px; width: 100%; text-align: left;
+  padding: 13px 10px; border-radius: 10px; font-size: 0.95rem;
+}
+.sheet-item:active { background: var(--paper); }
+.sheet-item .t-name { flex: 1; font-weight: 600; }
+.sheet-item .t-short { font-size: 0.78rem; color: var(--ink-faint); }
+.sheet-item.on { color: var(--check); }
+.sheet-item.on .t-name { font-weight: 800; }
+.sheet-check { width: 20px; text-align: center; }
+
 @media (max-height: 700px) {
   .deck { min-height: 320px; }
 }
@@ -242,6 +272,7 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 </head>
 <body>
 <div class="app"><div class="screen" id="root"></div></div>
+<div id="modal"></div>
 <script>
 'use strict';
 
@@ -254,6 +285,15 @@ const DATA = /*__DATA_JSON__*/null;
 
 /* 성경 66권 표준 테이블 (OSIS id) */
 const BOOKS = /*__BOOKS_JSON__*/null;
+
+/* 역본 데이터: { translations: [{id,name,short,refLang}], texts: {transId: {verseId: 본문}} } */
+const TRANS = /*__TRANS_JSON__*/null;
+
+/* 선택 가능한 역본 목록 — '원문'은 암송카드에 원래 입력돼 있던 본문 */
+const TRANS_LIST = [
+  { id: 'orig', name: '암송카드 원문', short: '원문', refLang: 'ko' },
+].concat(TRANS ? TRANS.translations : []);
+const DEFAULT_TRANS = TRANS ? 'grg' : 'orig';
 
 const collections = DATA.collections;
 const verses = DATA.verses;
@@ -275,9 +315,22 @@ function fmtRef(ref, lang, style) {
 }
 
 /* ── 본문 텍스트 공급자 ─────────────────────────────
- * 지금은 내장 텍스트. 전체 성경 DB가 준비되면 이 함수만
- * ref(book/chapter/verses) 기반 조회로 교체하면 된다. */
-function getVerseText(v, lang) { return (v.texts && v.texts[lang]) || null; }
+ * 선택된 역본(state.trans)의 본문을 반환.
+ * 'orig' = 암송카드 원문(예전 앱에서 입력된 텍스트),
+ * 그 외 = 성경 DB에서 추출한 역본 텍스트. */
+function getVerseText(v, transId) {
+  if (transId === 'orig') return (v.texts && v.texts.ko) || null;
+  return (TRANS && TRANS.texts[transId] && TRANS.texts[transId][v.id]) || null;
+}
+/* 폴백: 선택 역본에 없으면 개역개정 → 원문 순 */
+function getVerseTextWithFallback(v, transId) {
+  const t = getVerseText(v, transId);
+  if (t) return { text: t, fallback: false };
+  return { text: getVerseText(v, 'grg') || getVerseText(v, 'orig') || '', fallback: true };
+}
+function curTrans() {
+  return TRANS_LIST.find(t => t.id === state.trans) || TRANS_LIST[0];
+}
 
 /* ── 저장소 (localStorage 불가 환경에서도 동작) ──── */
 const mem = {};
@@ -305,9 +358,16 @@ function applyFontScale(v) {
 }
 
 /* ── 상태 ─────────────────────────────────────── */
+function loadTrans() {
+  try {
+    const v = localStorage.getItem('bmc.trans.v1');
+    if (v && TRANS_LIST.some(t => t.id === v)) return v;
+  } catch (e) {}
+  return DEFAULT_TRANS;
+}
 const state = {
   stack: [{ name: 'home' }],
-  lang: 'ko',
+  trans: loadTrans(),
   fav: loadSet('favorites'),
   done: loadSet('completed'),
   mode: 'card',
@@ -367,7 +427,7 @@ function topbarHTML(title, opts) {
     '</div>' +
     '<h1 class="topbar-title">' + esc(title) + '</h1>' +
     '<div class="topbar-side topbar-right">' +
-    (opts.lang ? '<button class="pill-btn" data-action="lang">' + (state.lang === 'ko' ? 'En' : '한') + '</button>' : '') +
+    (opts.lang ? '<button class="pill-btn" data-action="trans-menu">' + esc(curTrans().short) + ' ▾</button>' : '') +
     '</div></header>';
 }
 
@@ -422,17 +482,18 @@ function groupHTML(s) {
 /* ── 카드 마크업 ──────────────────────────────── */
 function cardHTML(v) {
   const f = cardFooter(v);
-  const refFull = fmtRef(v.ref, state.lang, 'full');
-  const text = getVerseText(v, state.lang);
-  const fallback = !text && state.lang === 'en';
-  const body = text || getVerseText(v, 'ko') || '';
+  const t = curTrans();
+  const refFull = fmtRef(v.ref, t.refLang, 'full');
+  const r = getVerseTextWithFallback(v, state.trans);
+  const body = r.text;
+  const fallback = r.fallback && state.trans !== 'orig';
   return '<div class="card3d' + (state.flipped ? ' flipped' : '') + '" style="--accent:' + f.color + '">' +
     '<div class="card-inner">' +
     '<div class="card-face card-front">' +
     '<div class="card-head"><h2 class="card-title">' + esc(v.title) + '</h2>' +
     '<div class="card-ref">' + esc(refFull) + '</div></div>' +
     '<p class="card-body">' + esc(body) + '</p>' +
-    (fallback ? '<div class="card-note">영어 본문이 아직 없어 한국어로 표시합니다</div>' : '') +
+    (fallback ? '<div class="card-note">' + esc(t.name) + '에 없는 구절이라 기본 본문으로 표시합니다</div>' : '') +
     '<div class="card-foot"><span class="card-code">' + esc(f.code) + ' <em>' + esc(f.groupName) + '</em></span>' +
     '<span class="card-foot-ref">' + esc(refFull) + '</span></div>' +
     '</div>' +
@@ -465,14 +526,15 @@ function verseScreenHTML(s, list) {
       '</div>' +
       '<p class="deck-hint">카드를 탭하면 본문이 가려집니다 · 좌우로 넘겨보세요</p></div>';
   } else {
+    const tr = curTrans();
     inner = '<div class="verse-list">' + list.map((v, i) => {
       const f = cardFooter(v);
-      const text = getVerseText(v, state.lang) || getVerseText(v, 'ko') || '';
+      const text = getVerseTextWithFallback(v, state.trans).text;
       return '<div class="verse-row" style="--accent:' + f.color + '">' +
         '<button class="verse-row-main" data-action="open-card" data-idx="' + i + '">' +
         '<div class="verse-row-top"><span class="verse-row-code">' + esc(f.code) + '</span>' +
         '<span class="verse-row-title">' + esc(v.title) + '</span>' +
-        '<span class="verse-row-ref">' + esc(fmtRef(v.ref, state.lang, 'abbr')) + '</span></div>' +
+        '<span class="verse-row-ref">' + esc(fmtRef(v.ref, tr.refLang, 'abbr')) + '</span></div>' +
         '<p class="verse-row-text">' + esc(text) + '</p></button>' +
         '<div class="verse-row-actions">' +
         '<button class="row-action' + (state.fav.has(v.id) ? ' star-on' : '') + '" data-action="row-fav" data-id="' + v.id + '">★</button>' +
@@ -571,6 +633,21 @@ function toggleSet(kind, id) {
   saveSet(kind === 'fav' ? 'favorites' : 'completed', set);
 }
 
+/* ── 역본 선택 시트 ───────────────────────────── */
+function openTransMenu() {
+  const m = document.getElementById('modal');
+  m.innerHTML = '<div class="sheet-overlay" data-action="trans-close"><div class="sheet" data-action="noop">' +
+    '<div class="sheet-title">역본 선택</div>' +
+    TRANS_LIST.map(t =>
+      '<button class="sheet-item' + (t.id === state.trans ? ' on' : '') + '" data-action="pick-trans" data-id="' + t.id + '">' +
+      '<span class="sheet-check">' + (t.id === state.trans ? '✓' : '') + '</span>' +
+      '<span class="t-name">' + esc(t.name) + '</span>' +
+      '<span class="t-short">' + esc(t.short) + '</span>' +
+      '</button>').join('') +
+    '</div></div>';
+}
+function closeTransMenu() { document.getElementById('modal').innerHTML = ''; }
+
 /* ── 렌더 ─────────────────────────────────────── */
 const root = document.getElementById('root');
 function render() {
@@ -592,7 +669,14 @@ document.addEventListener('click', e => {
   const s = cur();
   if (a === 'back') pop();
   else if (a === 'go-home') goHome();
-  else if (a === 'lang') { state.lang = state.lang === 'ko' ? 'en' : 'ko'; render(); }
+  else if (a === 'trans-menu') openTransMenu();
+  else if (a === 'trans-close') closeTransMenu();
+  else if (a === 'pick-trans') {
+    state.trans = btn.dataset.id;
+    try { localStorage.setItem('bmc.trans.v1', state.trans); } catch (err) {}
+    closeTransMenu();
+    render();
+  }
   else if (a === 'open-col') {
     const col = getCollection(btn.dataset.id);
     if (!col.sections.length) push({ name: 'verses', collectionId: col.id, title: col.name });

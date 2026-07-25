@@ -1,3 +1,5 @@
 node_modules
 dist
 .DS_Store
+# 성경 DB 원본 (용량 큼 — 추출된 translations.json만 커밋)
+bibledb/

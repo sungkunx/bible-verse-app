@@ -19,9 +19,12 @@ def load_books():
 def main():
     data = json.load(open(os.path.join(ROOT, 'src/data/verses.json'), encoding='utf-8'))
     books = load_books()
+    trans_path = os.path.join(ROOT, 'src/data/translations.json')
+    trans = json.load(open(trans_path, encoding='utf-8')) if os.path.exists(trans_path) else None
     tpl = open(os.path.join(ROOT, 'single/template.html'), encoding='utf-8').read()
     out = tpl.replace('/*__DATA_JSON__*/null', json.dumps(data, ensure_ascii=False, separators=(',', ':')))
     out = out.replace('/*__BOOKS_JSON__*/null', json.dumps(books, ensure_ascii=False, separators=(',', ':')))
+    out = out.replace('/*__TRANS_JSON__*/null', json.dumps(trans, ensure_ascii=False, separators=(',', ':')))
     # 1) 단일 파일 배포본  2) GitHub Pages용 루트 index.html (같은 내용)
     for dest in [os.path.join(ROOT, 'single/암송카드.html'), os.path.join(ROOT, 'index.html')]:
         open(dest, 'w', encoding='utf-8').write(out)
