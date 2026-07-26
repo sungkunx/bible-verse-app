@@ -27,7 +27,9 @@ OSIS_ORDER = [
 ]
 BOOK_NUM = {osis: i + 1 for i, osis in enumerate(OSIS_ORDER)}
 
-# 역본 정의: (id, 파일, 표시 이름, 짧은 이름, 참조 표기 언어)
+# 역본 정의: (id, 파일, 표시 이름, 짧은 이름, 주소 표기 언어)
+#   refLang은 src/data/books.js의 언어 키(ko/en/ja/zh/es/vi)와 일치해야 함.
+#   영어가 아닌 역본은 앱에서 "네이티브 주소 · English 주소"로 병기된다.
 TRANSLATIONS = [
     ('grg',  '개역개정S.sdb',    '개역개정',        '개역개정', 'ko'),
     ('swm',  '쉬운말.bdb',       '쉬운말 성경',     '쉬운말',   'ko'),
@@ -36,10 +38,10 @@ TRANSLATIONS = [
     ('gjkh', '개정국한문.bdb',   '개정 국한문',     '國漢文改', 'ko'),
     ('niv',  'NIV2011.bdb',      'NIV 2011',        'NIV',      'en'),
     ('nlt',  'NLT.bdb',          'NLT',             'NLT',      'en'),
-    ('jpn',  '일본신개역.bdb',   '日本語 新改訳',   '日本語',   'en'),
-    ('chs',  '중문화간체.bdb',   '中文 和合本简体', '中文',     'en'),
-    ('esp',  '스페인RV1995.bdb', 'Español RV1995',  'Español',  'en'),
-    ('vie',  '베트남.bdb',       'Tiếng Việt',      'Việt',     'en'),
+    ('jpn',  '일본신개역.bdb',   '日本語 新改訳',   '日本語',   'ja'),
+    ('chs',  '중문화간체.bdb',   '中文 和合本简体', '中文',     'zh'),
+    ('esp',  '스페인RV1995.bdb', 'Español RV1995',  'Español',  'es'),
+    ('vie',  '베트남.bdb',       'Tiếng Việt',      'Việt',     'vi'),
 ]
 
 # ── 일본어 DB(口語訳 계열) 절 번호 교정 ─────────────────────────

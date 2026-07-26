@@ -46,25 +46,25 @@
    "id": "jpn",
    "name": "日本語 新改訳",
    "short": "日本語",
-   "refLang": "en"
+   "refLang": "ja"
   },
   {
    "id": "chs",
    "name": "中文 和合本简体",
    "short": "中文",
-   "refLang": "en"
+   "refLang": "zh"
   },
   {
    "id": "esp",
    "name": "Español RV1995",
    "short": "Español",
-   "refLang": "en"
+   "refLang": "es"
   },
   {
    "id": "vie",
    "name": "Tiếng Việt",
    "short": "Việt",
-   "refLang": "en"
+   "refLang": "vi"
   }
  ],
  "texts": {
