@@ -213,12 +213,55 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .card-code em { font-style: normal; font-weight: 500; color: var(--ink-faint); margin-left: 4px; }
 .card-foot-ref { white-space: nowrap; }
 
-.card-back-center {
-  flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
+.card-back-ref {
+  margin-top: 5px; font-size: calc(1.05rem * var(--fs)); font-weight: 700;
+  color: var(--ink-soft); letter-spacing: -0.01em;
 }
-.card-back-ref { font-size: calc(1.6rem * var(--fs)); font-weight: 800; color: var(--ink); letter-spacing: -0.01em; text-align: center; }
-.card-back-ref-en { margin-top: -6px; font-size: calc(1rem * var(--fs)); color: var(--ink-faint); font-weight: 600; }
-.card-back-hint { font-size: 0.9rem; color: var(--ink-faint); }
+.card-back-hint { font-size: 0.76rem; color: var(--ink-faint); text-align: center; margin-top: 8px; }
+
+/* ── 뒷면 암송 타이핑 ─────────────────────────────── */
+.card-quiz { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+.quiz-input {
+  flex: 1; min-height: 84px; width: 100%; resize: none;
+  border: 1px solid var(--line); border-radius: 11px; background: #fbfaf6;
+  padding: 11px 12px; font-family: inherit; color: var(--ink);
+  font-size: calc(1.02rem * var(--fs)); line-height: 1.65; letter-spacing: -0.004em;
+  word-break: keep-all; -webkit-user-select: text; user-select: text;
+}
+.quiz-input:focus { outline: none; border-color: var(--accent); background: #fff; }
+.quiz-input::placeholder { color: #b8b4aa; }
+.quiz-bar { display: flex; align-items: center; gap: 10px; margin-top: 9px; }
+.quiz-btn {
+  padding: 8px 20px; border-radius: 999px; font-size: 0.9rem; font-weight: 700;
+  background: var(--accent); color: #fff; flex-shrink: 0;
+}
+.quiz-btn:active { opacity: 0.85; }
+.quiz-score { font-size: 0.82rem; font-weight: 600; color: var(--ink-faint); }
+.quiz-score.perfect { color: var(--check); }
+.quiz-result {
+  margin-top: 9px; overflow-y: auto; max-height: 42%;
+  font-size: calc(0.98rem * var(--fs)); line-height: 1.75; color: var(--ink);
+  word-break: keep-all; touch-action: pan-y;
+}
+.quiz-result:empty { display: none; }
+/* 채점 후에는 입력창을 줄이고 결과에 자리를 내준다 */
+.card-quiz.graded .quiz-input { flex: 0 0 auto; height: 30%; min-height: 58px; }
+.card-quiz.graded .quiz-result {
+  flex: 1; max-height: none; min-height: 0;
+  border-top: 1px dashed var(--line); padding-top: 9px;
+}
+/* 틀린 글자 — 빨간 물결 밑줄 */
+.quiz-result .bad {
+  text-decoration: underline wavy #d9534f;
+  text-decoration-skip-ink: none; text-underline-offset: 3px;
+  color: #c0392b;
+}
+.quiz-result .bad.miss { color: #d9534f; opacity: 0.75; }   /* 빠뜨린 글자 */
+/* 띄어쓰기만 다른 곳 — 초록 ✓ */
+.quiz-result .sp-mark {
+  font-style: normal; color: var(--check); font-size: 0.78em; font-weight: 700;
+  vertical-align: 0.15em; margin: 0 1px;
+}
 
 /* 덱 컨트롤 */
 .deck-controls { display: flex; align-items: center; justify-content: center; gap: 14px; margin-top: 18px; }
@@ -481,6 +524,76 @@ function cardFooter(v) {
   };
 }
 
+/* ── 암송 타이핑 채점 ──────────────────────────────
+ * 입력한 본문과 정답을 글자 단위로 맞춰 보고 결과를 표시한다.
+ *   · 틀린 글자 / 빠뜨린 글자 / 더 쓴 글자 → 빨간 물결 밑줄
+ *   · 띄어쓰기만 다른 곳            → 초록 ✓ 표시 (틀린 것으로 치지 않음)
+ *   · 문장부호는 비교에서 제외 (암송에서는 중요하지 않음)
+ * 한글 조사·어미가 붙어 있어 어절이 아닌 글자 단위로 비교한다. */
+const PUNCT = /[.,!?;:'"()\[\]{}·…「」『』“”‘’\-–—~/\\]/;
+
+function tokenizeForGrade(s) {
+  // 유의미한 글자만 남기고, 각 글자 앞의 공백·문장부호를 원래 순서대로 보관
+  const out = [];
+  let gap = '';
+  for (const ch of (s || '')) {
+    if (/\s/.test(ch)) { gap += ' '; continue; }
+    if (PUNCT.test(ch)) { gap += ch; continue; }
+    out.push({ ch: ch, gap: gap.replace(/ {2,}/g, ' '), sp: gap.indexOf(' ') >= 0 });
+    gap = '';
+  }
+  return out;
+}
+
+/** 최장 공통 부분수열로 정렬해 편집 연산 목록을 만든다 */
+function diffTokens(a, b) {
+  const n = a.length, m = b.length;
+  const dp = new Int32Array((n + 1) * (m + 1));
+  for (let i = n - 1; i >= 0; i--) {
+    for (let j = m - 1; j >= 0; j--) {
+      dp[i * (m + 1) + j] = a[i].ch === b[j].ch
+        ? dp[(i + 1) * (m + 1) + (j + 1)] + 1
+        : Math.max(dp[(i + 1) * (m + 1) + j], dp[i * (m + 1) + (j + 1)]);
+    }
+  }
+  const ops = [];
+  let i = 0, j = 0;
+  while (i < n && j < m) {
+    if (a[i].ch === b[j].ch) { ops.push({ t: 'ok', u: a[i], c: b[j] }); i++; j++; }
+    else if (dp[(i + 1) * (m + 1) + j] >= dp[i * (m + 1) + (j + 1)]) { ops.push({ t: 'extra', u: a[i] }); i++; }
+    else { ops.push({ t: 'miss', c: b[j] }); j++; }
+  }
+  while (i < n) { ops.push({ t: 'extra', u: a[i] }); i++; }
+  while (j < m) { ops.push({ t: 'miss', c: b[j] }); j++; }
+  return ops;
+}
+
+function gradeHTML(input, answer) {
+  const a = tokenizeForGrade(input);
+  const b = tokenizeForGrade(answer);
+  if (!a.length) return { html: '', ok: 0, total: b.length, spaceOnly: 0, empty: true };
+  const ops = diffTokens(a, b);
+  let html = '', ok = 0, spaceOnly = 0;
+  for (const op of ops) {
+    if (op.t === 'ok') {
+      ok++;
+      const spDiff = op.u.sp !== op.c.sp;
+      if (spDiff) spaceOnly++;
+      html += esc(op.u.gap) +
+        (spDiff ? '<i class="sp-mark">✓</i>' : '') +
+        esc(op.u.ch);
+    } else if (op.t === 'extra') {
+      html += esc(op.u.gap) + '<u class="bad">' + esc(op.u.ch) + '</u>';
+    } else {
+      html += (op.c.sp ? ' ' : '') + '<u class="bad miss">' + esc(op.c.ch) + '</u>';
+    }
+  }
+  return { html: html, ok: ok, total: b.length, spaceOnly: spaceOnly, empty: false };
+}
+
+/* 입력한 내용은 구절별로 기억해 뒀다가 카드를 다시 뒤집어도 유지 */
+const typedText = {};
+
 /* ── HTML 헬퍼 ────────────────────────────────── */
 const esc = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
@@ -592,10 +705,19 @@ function cardHTML(v) {
     '<span class="card-foot-ref">' + esc(refFull) + '</span></div>' +
     '</div>' +
     '<div class="card-face card-back">' +
-    '<div class="card-head"><h2 class="card-title">' + esc(v.title) + '</h2></div>' +
-    '<div class="card-back-center"><div class="card-back-ref">' + esc(refD.main) + '</div>' +
-    (refD.sub ? '<div class="card-back-ref-en">' + esc(refD.sub) + '</div>' : '') +
-    '<div class="card-back-hint">본문을 떠올려 보세요 · 탭하면 본문 보기</div></div>' +
+    '<div class="card-head"><h2 class="card-title">' + esc(v.title) + '</h2>' +
+    '<div class="card-back-ref">' + esc(refD.main) +
+    (refD.sub ? '<em class="ref-en">' + esc(refD.sub) + '</em>' : '') + '</div></div>' +
+    '<div class="card-quiz" data-quiz="1">' +
+    '<textarea class="quiz-input" id="quizInput" spellcheck="false" ' +
+    'placeholder="암송한 말씀을 입력해 보세요">' + esc(typedText[v.id] || '') + '</textarea>' +
+    '<div class="quiz-bar">' +
+    '<button class="quiz-btn" data-action="quiz-check">확인</button>' +
+    '<span class="quiz-score" id="quizScore"></span>' +
+    '</div>' +
+    '<div class="quiz-result" id="quizResult"></div>' +
+    '</div>' +
+    '<div class="card-back-hint">빈 곳을 탭하면 본문이 보입니다</div>' +
     '<div class="card-foot"><span class="card-code">' + esc(f.code) + ' <em>' + esc(f.groupName) + '</em></span></div>' +
     '</div></div></div>';
 }
@@ -707,6 +829,51 @@ function fitCardBody(scope) {
     if (k < 0.85) body.style.lineHeight = '1.65';
   }
 }
+
+/** 뒷면 '확인' — 입력한 본문을 채점해 결과를 보여준다 */
+function runQuizCheck() {
+  const box = document.querySelector('#deckCurrent .card-back');
+  if (!box) return;
+  const input = box.querySelector('.quiz-input');
+  const result = box.querySelector('.quiz-result');
+  const score = box.querySelector('.quiz-score');
+  const v = currentVerses()[state.index];
+  if (!input || !result || !v) return;
+  typedText[v.id] = input.value;
+  const answer = getVerseTextWithFallback(v, state.trans).text;
+  const g = gradeHTML(input.value, answer);
+  const quiz = box.querySelector('.card-quiz');
+  if (g.empty) {
+    result.innerHTML = '';
+    quiz.classList.remove('graded');
+    score.textContent = '먼저 본문을 입력해 보세요';
+    score.className = 'quiz-score';
+    return;
+  }
+  result.innerHTML = g.html;
+  quiz.classList.add('graded');
+  const pct = g.total ? Math.round(g.ok / g.total * 100) : 0;
+  const perfect = pct === 100 && !g.spaceOnly;
+  score.textContent = perfect ? '완벽해요!'
+    : pct + '% 일치' + (g.spaceOnly ? ' · 띄어쓰기 ' + g.spaceOnly + '곳' : '');
+  score.className = 'quiz-score' + (perfect ? ' perfect' : '');
+}
+
+/* 입력 내용은 구절별로 기억 (카드를 뒤집거나 넘겨도 유지) */
+document.addEventListener('input', e => {
+  if (!e.target.classList || !e.target.classList.contains('quiz-input')) return;
+  const v = currentVerses()[state.index];
+  if (v) typedText[v.id] = e.target.value;
+  // 내용을 고치면 이전 채점 결과는 지운다
+  const back = e.target.closest('.card-back');
+  if (back) {
+    back.querySelector('.quiz-result').innerHTML = '';
+    back.querySelector('.card-quiz').classList.remove('graded');
+    const sc = back.querySelector('.quiz-score');
+    sc.textContent = '';
+    sc.className = 'quiz-score';
+  }
+});
 
 /* ── 이전 카드 되돌리기 ─────────────────────────────
  * 오른쪽으로 스와이프하면 현재 카드는 그대로 두고, 바로 앞 카드가
@@ -885,9 +1052,11 @@ document.addEventListener('click', e => {
   else if (a === 'open-card') { state.mode = 'card'; state.index = +btn.dataset.idx; state.flipped = false; render(); }
   else if (a === 'prev') goCard(-1);
   else if (a === 'next') goCard(1);
+  else if (a === 'quiz-check') runQuizCheck();
   else if (a === 'fav' || a === 'done') {
     const v = currentVerses()[state.index];
-    if (v) { toggleSet(a, v.id); s.kind ? render() : updateDeck(); }
+    // 카드 내용은 그대로 두고 버튼 상태만 갱신 (뒷면 입력 내용 보존)
+    if (v) { toggleSet(a, v.id); s.kind ? render() : updateControls(); }
   }
   else if (a === 'row-fav' || a === 'row-done') {
     toggleSet(a === 'row-fav' ? 'fav' : 'done', btn.dataset.id);
@@ -920,6 +1089,8 @@ function dampedDx(dx) {
 }
 
 function dragStart(x, y, target) {
+  // 뒷면의 입력창·버튼 영역은 손대지 않는다 (타이핑·선택이 우선)
+  if (target && target.closest && target.closest('.card-quiz')) { drag = null; return; }
   // 터치 시작 지점의 스크롤 가능한 본문 (세로 드래그 시 직접 스크롤)
   let scrollEl = null;
   if (target && target.closest) {
@@ -1022,9 +1193,11 @@ document.addEventListener('mouseup', e => {
   dragEnd(e.clientX);
 });
 
-/* 키보드 (데스크톱) */
+/* 키보드 (데스크톱) — 입력창에서는 가로채지 않는다 */
 document.addEventListener('keydown', e => {
   if (cur().name !== 'verses' || state.mode !== 'card') return;
+  const t = e.target;
+  if (t && (t.tagName === 'TEXTAREA' || t.tagName === 'INPUT')) return;
   if (e.key === 'ArrowLeft') goCard(-1);
   else if (e.key === 'ArrowRight') goCard(1);
   else if (e.key === ' ') {
