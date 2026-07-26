@@ -48,6 +48,8 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   flex: 1; text-align: center; font-size: 1.02rem; font-weight: 700;
   letter-spacing: -0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
+/* 홈 화면 제목 (1.5배) */
+.topbar-title.big { font-size: 1.53rem; letter-spacing: -0.02em; }
 .topbar-side { display: flex; gap: 2px; min-width: 64px; }
 .topbar-right { justify-content: flex-end; }
 .icon-btn {
@@ -76,6 +78,20 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .collection-name { font-weight: 700; font-size: 0.98rem; letter-spacing: -0.01em; }
 .collection-meta { font-size: 0.8rem; color: var(--ink-faint); }
 .chevron { color: var(--ink-faint); font-size: 1.2rem; }
+
+/* 암송 달성도 */
+.progress-bar {
+  display: block; height: 4px; margin-top: 7px; border-radius: 999px;
+  background: #e6e3da; overflow: hidden;
+}
+.progress-bar i { display: block; height: 100%; background: var(--accent); border-radius: 999px; }
+.collection-stat {
+  display: flex; flex-direction: column; align-items: flex-end; gap: 1px;
+  min-width: 46px; flex-shrink: 0;
+}
+.collection-stat b { font-size: 0.9rem; font-weight: 700; color: var(--ink-faint); }
+.collection-stat em { font-style: normal; font-size: 0.72rem; color: var(--ink-faint); }
+.collection-stat.has b { color: var(--accent); }
 
 .home-shortcuts { display: flex; gap: 10px; margin-top: 18px; }
 .shortcut-card {
@@ -247,6 +263,17 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 
 .empty-note { text-align: center; color: var(--ink-faint); padding: 48px 0; font-size: 0.9rem; }
 
+/* ── 토스트 (뒤로가기 안내 등) ─────────────────────── */
+#toast {
+  position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom) + 34px);
+  transform: translateX(-50%); z-index: 200;
+  background: rgba(43, 42, 39, 0.92); color: #fff;
+  padding: 11px 20px; border-radius: 999px; font-size: 0.88rem; font-weight: 500;
+  opacity: 0; pointer-events: none; transition: opacity 0.2s ease;
+  max-width: calc(100% - 40px); text-align: center;
+}
+#toast.on { opacity: 1; }
+
 /* ── 역본 선택 시트 ───────────────────────────────── */
 .sheet-overlay {
   position: fixed; inset: 0; z-index: 100;
@@ -285,6 +312,7 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 <body>
 <div class="app"><div class="screen" id="root"></div></div>
 <div id="modal"></div>
+<div id="toast"></div>
 <script>
 'use strict';
 
@@ -408,10 +436,19 @@ const cur = () => state.stack[state.stack.length - 1];
 function push(s) {
   state.stack.push(s);
   if (s.name === 'verses') { state.mode = 'card'; state.index = s.startIndex || 0; state.flipped = false; }
+  pushHistory();   // 안드로이드 뒤로가기가 이전 단계로 오도록 기록을 쌓는다
   render();
 }
-function pop() { if (state.stack.length > 1) { state.stack.pop(); render(); } }
-function goHome() { state.stack = [{ name: 'home' }]; render(); }
+/* 화면 안의 '이전' 버튼도 브라우저 뒤로가기를 통하게 해서
+   앱 상태와 히스토리가 어긋나지 않게 한다. */
+function pop() { if (state.stack.length > 1) history.back(); }
+function goHome() {
+  if (state.stack.length > 1) {
+    state.stack = [{ name: 'home' }];
+    pushHistory();
+    render();
+  }
+}
 
 const getCollection = id => collections.find(c => c.id === id);
 
@@ -452,22 +489,37 @@ function topbarHTML(title, opts) {
     (opts.back ? '<button class="icon-btn" data-action="back" aria-label="뒤로">' + ICON_BACK + '</button>' : '') +
     (opts.home ? '<button class="icon-btn" data-action="go-home" aria-label="홈">' + ICON_HOME + '</button>' : '') +
     '</div>' +
-    '<h1 class="topbar-title">' + esc(title) + '</h1>' +
+    '<h1 class="topbar-title' + (opts.big ? ' big' : '') + '">' + esc(title) + '</h1>' +
     '<div class="topbar-side topbar-right">' +
     (opts.lang ? '<button class="pill-btn" data-action="trans-menu">' + esc(curTrans().short) + ' ▾</button>' : '') +
     '</div></header>';
 }
 
 /* ── 홈 화면 ──────────────────────────────────── */
+/** 암송집별 암송완료 달성도 */
+function progressOf(collectionId) {
+  const list = selectVerses({ collectionId: collectionId });
+  const done = list.reduce((n, v) => n + (state.done.has(v.id) ? 1 : 0), 0);
+  return { done: done, total: list.length, pct: list.length ? Math.round(done / list.length * 100) : 0 };
+}
+
 function homeHTML() {
-  const cols = collections.map(c =>
-    '<button class="collection-card" style="--accent:' + c.color + '" data-action="open-col" data-id="' + c.id + '">' +
+  const cols = collections.map(c => {
+    const p = progressOf(c.id);
+    return '<button class="collection-card" style="--accent:' + c.color + '" data-action="open-col" data-id="' + c.id + '">' +
     '<span class="collection-stripe"></span>' +
     '<span class="collection-info">' +
     '<span class="collection-name">' + esc(c.name) + '</span>' +
     '<span class="collection-meta">' + c.verseCount + '구절' + (c.sections.length ? ' · ' + c.sections.length + '개 주제' : '') + '</span>' +
-    '</span><span class="chevron">›</span></button>').join('');
-  return topbarHTML('말씀 암송 카드', { lang: true }) +
+    '<span class="progress-bar"><i style="width:' + p.pct + '%"></i></span>' +
+    '</span>' +
+    '<span class="collection-stat' + (p.done ? ' has' : '') + '">' +
+    '<b>' + p.pct + '%</b>' +
+    '<em>' + p.done + '/' + p.total + '</em>' +
+    '</span>' +
+    '<span class="chevron">›</span></button>';
+  }).join('');
+  return topbarHTML('말씀 암송 카드', { lang: true, big: true }) +
     '<main class="home-main">' +
     '<p class="home-caption">암송집을 선택하세요</p>' +
     '<div class="collection-list">' + cols + '</div>' +
@@ -482,6 +534,14 @@ function groupHTML(s) {
   const col = getCollection(s.collectionId);
   const section = s.sectionId ? col.sections.find(x => x.id === s.sectionId) : null;
   let rows = '';
+  if (section) {
+    // 하위 그룹이 있는 단계에도 그 단계의 '전체 보기'를 제공
+    const secCount = selectVerses({ collectionId: col.id, sectionId: section.id }).length;
+    rows += '<button class="group-row all-row" data-action="open-verses" data-col="' + col.id +
+      '" data-sec="' + section.id + '" data-all="1">' +
+      '<span class="group-name">전체 보기</span><span class="group-count">' + secCount + '구절</span>' +
+      '<span class="chevron">›</span></button>';
+  }
   if (!section) {
     rows += '<button class="group-row all-row" data-action="open-verses" data-col="' + col.id + '">' +
       '<span class="group-name">전체 보기</span><span class="group-count">' + col.verseCount + '구절</span><span class="chevron">›</span></button>';
@@ -586,7 +646,12 @@ function verseScreenHTML(s, list) {
 }
 
 /* ── 덱 갱신 (카드 넘김/체크 시 부분 갱신) ─────── */
-function updateDeck(fromStack) {
+/**
+ * 덱 갱신. enter로 새 카드가 들어오는 연출을 지정한다.
+ *   'stack' — 뒤 카드뭉치에서 앞으로 올라옴 (다음 카드로 넘길 때)
+ *   'left'  — 화면 왼쪽에서 미끄러져 들어옴 (이전 카드로 돌아갈 때)
+ */
+function updateDeck(enter) {
   const list = currentVerses();
   if (state.index >= list.length) state.index = Math.max(0, list.length - 1);
   const v = list[state.index];
@@ -594,12 +659,19 @@ function updateDeck(fromStack) {
   if (!el || !v) return;
   el.style.transition = 'none';
   el.innerHTML = cardHTML(v);
-  if (fromStack) {
-    // 뒤 카드뭉치 위치에서 앞으로 올라오는 연출
+  if (enter === 'stack') {
     el.style.transform = 'translateY(7px) scale(0.975)';
     el.offsetHeight; // 강제 리플로우 — 드래그하던 위치가 아니라 이 위치에서 시작
     el.style.transition = 'transform 0.24s ease-out';
     el.style.transform = '';
+  } else if (enter === 'left') {
+    // 이전 카드가 왼쪽에서 덱 위로 되돌아오는 연출
+    el.style.zIndex = '4';
+    el.style.transform = 'translateX(-108%) rotate(-6deg)';
+    el.offsetHeight;
+    el.style.transition = 'transform 0.28s cubic-bezier(0.22, 0.7, 0.3, 1)';
+    el.style.transform = '';
+    setTimeout(() => { el.style.zIndex = ''; }, 300);
   } else {
     el.style.transform = '';
   }
@@ -629,9 +701,11 @@ function fitCardBody() {
   }
 }
 
-/* 카드 넘김: 잔상은 "드래그하던 그 위치"에서 이어서 날아가고,
- * 새 카드는 뒤 카드뭉치에서 한 장 올라오듯 나타난다.
- * (잔상이 가운데로 되돌아간 뒤 날아가면 두 장이 움직이는 느낌이 남) */
+/* 카드 넘김
+ * 다음 카드(dir>0): 현재 카드가 드래그하던 위치에서 왼쪽으로 날아가고
+ *                   새 카드가 뒤 카드뭉치에서 올라온다.
+ * 이전 카드(dir<0): 현재 카드는 뒤 카드뭉치로 물러나고
+ *                   이전 카드가 왼쪽에서 덱 위로 되돌아온다. */
 function goCard(dir, fromDx) {
   const list = currentVerses();
   const next = state.index + dir;
@@ -648,14 +722,22 @@ function goCard(dir, fromDx) {
     ghost.style.opacity = '1';
     deck.appendChild(ghost);
     ghost.offsetHeight; // 강제 리플로우 — 시작 위치를 확정시켜야 transition이 걸림
-    ghost.style.transition = 'transform 0.24s ease-out, opacity 0.24s ease-out';
-    ghost.style.transform = 'translateX(' + (dir > 0 ? -120 : 120) + '%) rotate(' + (dir > 0 ? -7 : 7) + 'deg)';
-    ghost.style.opacity = '0.3';
-    setTimeout(() => ghost.remove(), 300);
+    if (dir > 0) {
+      ghost.style.transition = 'transform 0.24s ease-out, opacity 0.24s ease-out';
+      ghost.style.transform = 'translateX(-120%) rotate(-7deg)';
+      ghost.style.opacity = '0.3';
+    } else {
+      // 이전 카드가 들어올 자리를 비우며 뒤 카드뭉치로 물러남
+      ghost.style.zIndex = '1';
+      ghost.style.transition = 'transform 0.26s ease-out, opacity 0.26s ease-out';
+      ghost.style.transform = 'translateY(7px) scale(0.975)';
+      ghost.style.opacity = '0';
+    }
+    setTimeout(() => ghost.remove(), 320);
   }
   state.index = next;
   state.flipped = false;
-  updateDeck(true);
+  updateDeck(dir > 0 ? 'stack' : 'left');
 }
 
 function toggleSet(kind, id) {
@@ -724,7 +806,9 @@ document.addEventListener('click', e => {
     push({
       name: 'verses', collectionId: col.id,
       sectionId: btn.dataset.sec || null, subsectionId: btn.dataset.sub || null,
-      title: sub ? sub.name : (sec ? sec.name : (btn.dataset.sec ? '' : col.shortName + ' 전체')),
+      title: sub ? sub.name
+        : sec ? (btn.dataset.all ? sec.name + ' 전체' : sec.name)
+        : col.shortName + ' 전체',
     });
   }
   else if (a === 'mode-card') { state.mode = 'card'; render(); }
@@ -880,6 +964,51 @@ document.addEventListener('keydown', e => {
     if (card) card.classList.toggle('flipped', state.flipped);
   }
 });
+
+/* ── 안드로이드 뒤로가기 ───────────────────────────
+ * 히스토리에 여유 항목을 하나 유지하고, 뒤로가기가 그것을 소비할 때
+ * 앱 안에서 한 단계 뒤로 이동한다. 홈에서는 한 번 더 누를 때만 나간다.
+ * (웹에서는 시스템 종료 확인창을 띄울 수 없어 토스트로 안내) */
+function pushHistory() {
+  try { history.pushState({ bmc: state.stack.length }, ''); } catch (e) {}
+}
+let toastTimer = null;
+function showToast(msg) {
+  const el = document.getElementById('toast');
+  if (!el) return;
+  el.textContent = msg;
+  el.classList.add('on');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('on'), 1900);
+}
+let exitArmedAt = 0;
+let exiting = false;   // 종료 진행 중이면 더 이상 가로채지 않는다
+window.addEventListener('popstate', () => {
+  if (exiting) return;
+  // 1) 역본 시트가 열려 있으면 먼저 닫는다
+  if (document.getElementById('modal').innerHTML) {
+    closeTransMenu();
+    pushHistory();
+    return;
+  }
+  // 2) 앱 안에서 한 단계 뒤로
+  if (state.stack.length > 1) {
+    state.stack.pop();
+    pushHistory();
+    render();
+    return;
+  }
+  // 3) 홈: 2초 안에 다시 누르면 그대로 나간다
+  if (Date.now() - exitArmedAt < 2000) {
+    exiting = true;
+    setTimeout(() => history.back(), 0);
+    return;
+  }
+  exitArmedAt = Date.now();
+  showToast('한 번 더 누르면 앱을 닫습니다');
+  pushHistory();
+});
+pushHistory();   // 뒤로가기가 소비할 여유 항목
 
 render();
 </script>
