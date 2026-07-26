@@ -27,21 +27,25 @@ OSIS_ORDER = [
 ]
 BOOK_NUM = {osis: i + 1 for i, osis in enumerate(OSIS_ORDER)}
 
-# 역본 정의: (id, 파일, 표시 이름, 짧은 이름, 주소 표기 언어)
-#   refLang은 src/data/books.js의 언어 키(ko/en/ja/zh/es/vi)와 일치해야 함.
+# 역본 정의: (id, 파일, 표시 이름, 짧은 이름, 주소 표기 언어, 앱 노출 여부)
+#   refLang은 src/data/books.js의 언어 키(ko/en/ja/zh/es/vi/hi)와 일치해야 함.
 #   영어가 아닌 역본은 앱에서 "네이티브 주소 · English 주소"로 병기된다.
+#   show=False인 역본은 앱 목록에 넣지 않는다. 국한문판은 노출하지 않지만
+#   개정국한문은 개역개정 띄어쓰기 복원의 기준으로 쓰이므로 추출은 계속한다.
 TRANSLATIONS = [
-    ('grg',  '개역개정S.sdb',    '개역개정',        '개역개정', 'ko'),
-    ('swm',  '쉬운말.bdb',       '쉬운말 성경',     '쉬운말',   'ko'),
-    ('hdi',  '현대인.bdb',       '현대인의 성경',   '현대인',   'ko'),
-    ('grkh', '개역국한문.bdb',   '개역 국한문',     '國漢文',   'ko'),
-    ('gjkh', '개정국한문.bdb',   '개정 국한문',     '國漢文改', 'ko'),
-    ('niv',  'NIV2011.bdb',      'NIV 2011',        'NIV',      'en'),
-    ('nlt',  'NLT.bdb',          'NLT',             'NLT',      'en'),
-    ('jpn',  '일본신개역.bdb',   '日本語 新改訳',   '日本語',   'ja'),
-    ('chs',  '중문화간체.bdb',   '中文 和合本简体', '中文',     'zh'),
-    ('esp',  '스페인RV1995.bdb', 'Español RV1995',  'Español',  'es'),
-    ('vie',  '베트남.bdb',       'Tiếng Việt',      'Việt',     'vi'),
+    ('grg',  '개역개정S.sdb',    '개역개정',          '개역개정', 'ko', True),
+    ('kkj',  '한글킹.bdb',       '한글 킹제임스',     '한글킹',   'ko', True),
+    ('swm',  '쉬운말.bdb',       '쉬운말 성경',       '쉬운말',   'ko', True),
+    ('hdi',  '현대인.bdb',       '현대인의 성경',     '현대인',   'ko', True),
+    ('niv',  'NIV2011.bdb',      'NIV 2011',          'NIV',      'en', True),
+    ('nlt',  'NLT.bdb',          'NLT',               'NLT',      'en', True),
+    ('jpn',  '일본신개역.bdb',   '日本語 新改訳',     '日本語',   'ja', True),
+    ('chs',  '중문화간체.bdb',   '中文 和合本简体',   '中文',     'zh', True),
+    ('esp',  '스페인RV1995.bdb', 'Español RV1995',    'Español',  'es', True),
+    ('vie',  '베트남.bdb',       'Tiếng Việt',        'Việt',     'vi', True),
+    ('hin',  '힌디개정.bdb',     '힌디어 (हिन्दी)',     'हिन्दी',     'hi', True),
+    # ── 앱에 노출하지 않음 ──
+    ('gjkh', '개정국한문.bdb',   '개정 국한문',       '國漢文改', 'ko', False),
 ]
 
 # ── 일본어 DB(口語訳 계열) 절 번호 교정 ─────────────────────────
@@ -78,6 +82,28 @@ JPN_SKIP = {  # DB에 본문이 없어 복구 불가 (기본 역본으로 대체
     'tms180-s2-1-5',   # 골 4:4-6 (4:6이 DB에 없음)
 }
 
+# ── 한글 킹제임스: 시편 표제가 1절 본문에 붙어 있다 ────────────
+# 예) 시 42:1 "악장을 따라 부른 코라의 아들들을 위한 마스킬수사슴이 시냇물을…"
+# 구분 기호가 없어 자동 분리가 불가하므로, 실제 본문과 대조해 확정한
+# 표제 문자열을 접두부로 제거한다. 표제가 있는 시편인지는 개정국한문판이
+# 표제를 [ ]로 표시하는 것을 이용해 자동 교차 검증한다 (main() 참고).
+KKJ_PSALM_TITLES = {
+    (42, 1): '악장을 따라 부른 코라의 아들들을 위한 마스킬',
+    (133, 1): '다윗의 올라가는 노래',
+}
+
+# ── 역본 간 절 번호 체계(versification) 차이 ──────────────────
+# verses.json의 절 번호는 개역개정 기준이다. 일부 역본은 절을 나누는
+# 방식이 달라 같은 번호가 다른 본문을 가리킨다.
+#   고후 13장: 개역개정·쉬운말은 12절이 "거룩하게 입맞춤으로 서로 문안하라"와
+#   "모든 성도가 너희에게 문안하느니라"를 합쳐 13절로 끝난다(축도=13절).
+#   KJV/서구 계열은 12·13·14로 나뉘어 축도가 14절이다.
+# 규칙: (책, 장, 우리 절, 그 장의 최대 절이 이 값일 때, 실제로 읽을 행)
+VERSIFICATION = [
+    ('2Cor', 13, 13, 14, [14]),
+]
+
+
 def clean_text(t):
     """DB 원문에서 앱에 표시할 순수 본문만 남긴다.
 
@@ -89,6 +115,7 @@ def clean_text(t):
       - 시편 표제 [다윗의 詩, 引導者를 따라…]    (개정국한문)
       - 보충어 중괄호 {그대로 되니라} → 괄호만 제거, 본문은 유지 (개역국한문)
       - 단락 기호 ○ 등                          (쉬운말)
+      - 상호참조 (इब्रा. 1:10), 각주 별표         (힌디개정)
     """
     if not t:
         return ''
@@ -100,6 +127,9 @@ def clean_text(t):
     t = re.sub(r'<[^>]*>', '', t)                  # 남은 태그 (<i>, <a name=…> 등)
     t = re.sub(r'^\s*\[[^\]]{2,60}\]\s*', '', t)   # 시편 표제
     t = t.replace('{', '').replace('}', '')        # 보충어 괄호
+    # 상호참조 주석: 괄호 안에 "장:절"이 있는 것만 제거 (본문 괄호는 보존)
+    t = re.sub(r'\s*\([^()]*\d+\s*:\s*\d+[^()]*\)', '', t)
+    t = t.replace('*', '')                         # 각주 별표
     t = re.sub(r'[○●◎□■″〃]', '', t)            # 단락 기호·인용 부호 잔재
     t = re.sub(r'\s+', ' ', t).strip()
     return t
@@ -110,6 +140,55 @@ def clean_text(t):
 # 개정국한문판은 같은 개역개정 본문에 띄어쓰기가 정상이므로,
 # 두 본문을 문자 단위로 정렬해 띄어쓰기 위치만 옮겨온다.
 # (한자↔한글 변환이 아니라 개역개정S의 글자를 그대로 쓰므로 안전)
+# ── 자리표시(placeholder) 행 ──────────────────────────────────
+# 여러 DB에는 본문 대신 안내 문구가 들어간 행이 있다.
+#   현대인      "(1절에 포함)"        — 앞 절에 합쳐 번역됨
+#   개역개정S   "3절에 포함됨", "5절과 같음"
+#   국한문      "(없음)", "{상동}"
+#   일본신개역  "（8節に合節）"        — 8절에 합절
+# 이런 행을 본문으로 오인하면 카드에 안내 문구가 그대로 표시된다.
+PH_MERGE = re.compile(
+    r'^[\s(（\[{]*(\d+)\s*(?:절|節)\s*(?:에\s*포함(?:됨)?|과\s*같음|に合節|と同じ)[\s)）\]}.]*$')
+PH_NONE = re.compile(r'^[\s(（\[{]*(?:없\s*음|상동|同上|N/?A|-+)[\s)）\]}.]*$')
+
+
+def fetch_verse(cur, book, ch, n):
+    """(본문, 병합된 절번호) 반환.
+    본문이 있으면 (텍스트, None), 자리표시면 (None, 대상절) 또는 (None, None)."""
+    row = cur.execute(
+        'SELECT btext FROM Bible WHERE book=? AND chapter=? AND verse=?',
+        (book, ch, n)).fetchone()
+    if not row:
+        return None, None
+    txt = clean_text(row[0])
+    if not txt:
+        return None, None
+    m = PH_MERGE.match(txt)
+    if m:
+        return None, int(m.group(1))
+    if PH_NONE.match(txt):
+        return None, None
+    return txt, None
+
+
+def read_range(cur, book, ch, numbers):
+    """요청한 절들의 본문을 읽는다. 자리표시 행은 건너뛰고,
+    요청한 절이 전부 자리표시면 그 행이 가리키는 절을 대신 읽는다."""
+    parts, targets = [], []
+    for n in numbers:
+        txt, merge_to = fetch_verse(cur, book, ch, n)
+        if txt:
+            parts.append(txt)
+        elif merge_to is not None and merge_to not in numbers and merge_to not in targets:
+            targets.append(merge_to)
+    if not parts:
+        for n in sorted(targets):
+            txt, _ = fetch_verse(cur, book, ch, n)
+            if txt:
+                parts.append(txt)
+    return parts
+
+
 def is_hanja(ch):
     return '㐀' <= ch <= '鿿' or '豈' <= ch <= '﫿'
 
@@ -216,7 +295,9 @@ def main():
     out = {'translations': [], 'texts': {}}
     warnings = []
 
-    for tid, fname, name, short, reflang in TRANSLATIONS:
+    shown = {t[0] for t in TRANSLATIONS if t[5]}
+
+    for tid, fname, name, short, reflang, show in TRANSLATIONS:
         path = os.path.join(ROOT, 'bibledb', fname)
         if not os.path.exists(path):
             warnings.append(f'{name}: 파일 없음 ({fname}) — 건너뜀')
@@ -225,6 +306,7 @@ def main():
         cur = con.cursor()
         texts = {}
         missing = []
+        vfixed = []   # 절 번호 체계 보정된 구절
         for v in verses:
             book = BOOK_NUM.get(v['ref']['book'])
             if not book:
@@ -241,43 +323,67 @@ def main():
                     texts[v['id']] = JPN_TEXT_FIX[v['id']]
                     continue
                 if v['id'] in JPN_ROW_FIX:
-                    parts = []
-                    ok = True
-                    for vs in JPN_ROW_FIX[v['id']]:
-                        row = cur.execute(
-                            'SELECT btext FROM Bible WHERE book=? AND chapter=? AND verse=?',
-                            (book, ch, vs)).fetchone()
-                        if not row or not clean_text(row[0]):
-                            ok = False
-                            break
-                        parts.append(clean_text(row[0]))
-                    if ok and parts:
+                    rows_j = JPN_ROW_FIX[v['id']]
+                    parts = read_range(cur, book, ch, rows_j)
+                    if len(parts) == len(rows_j):
                         texts[v['id']] = ' '.join(parts)
                     else:
                         missing.append(v['id'] + ' (교정 행 조회 실패)')
                     continue
 
-            parts = []
-            ok = True
+            # 절 번호 체계 차이 보정 (예: 고후 13:13 → KJV 계열은 13:14)
+            rows = None
+            for bk, vch, ours, trigger_max, mapped in VERSIFICATION:
+                if v['ref']['book'] != bk or ch != vch:
+                    continue
+                segs = v['ref']['verses']
+                if len(segs) != 1 or segs[0].get('end') or segs[0]['start'] != ours:
+                    continue
+                mx = cur.execute(
+                    'SELECT MAX(verse) FROM Bible WHERE book=? AND chapter=?',
+                    (book, ch)).fetchone()[0]
+                # 자리표시 행("(없음)" 등)만 있는 마지막 절은 세지 않는다.
+                # 개정국한문은 고후 13:14가 "(없음)"이라 최대절만 보면 오판한다.
+                if mx == trigger_max:
+                    tail, _ = fetch_verse(cur, book, ch, trigger_max)
+                    if tail:
+                        rows = mapped
+                break
+            if rows:
+                parts = read_range(cur, book, ch, rows)
+                if len(parts) == len(rows):
+                    texts[v['id']] = ' '.join(parts)
+                    vfixed.append(f'{v["id"]} → {ch}:{",".join(map(str, rows))}')
+                else:
+                    missing.append(v['id'] + ' (절 번호 보정 조회 실패)')
+                continue
+
+            numbers = []
             for seg in v['ref']['verses']:
-                for vs in range(seg['start'], seg.get('end', seg['start']) + 1):
-                    row = cur.execute(
-                        'SELECT btext FROM Bible WHERE book=? AND chapter=? AND verse=?',
-                        (book, ch, vs)).fetchone()
-                    if not row or not clean_text(row[0]):
-                        ok = False
-                        break
-                    parts.append(clean_text(row[0]))
-                if not ok:
-                    break
-            if ok and parts:
-                texts[v['id']] = ' '.join(parts)
+                numbers.extend(range(seg['start'], seg.get('end', seg['start']) + 1))
+            parts = read_range(cur, book, ch, numbers)
+            if parts:
+                s = ' '.join(parts)
+                # 한글 킹제임스: 시편 1절에 붙어 있는 표제 제거
+                if tid == 'kkj' and v['ref']['book'] == 'Ps':
+                    title = KKJ_PSALM_TITLES.get((ch, v['ref']['verses'][0]['start']))
+                    if title and s.startswith(title):
+                        s = s[len(title):].strip()
+                    elif title:
+                        warnings.append(
+                            f'{name}: {v["id"]} 표제 제거 실패 (원문이 바뀐 듯) — 확인 필요')
+                texts[v['id']] = s
             else:
                 missing.append(v['id'])
         con.close()
-        out['translations'].append({'id': tid, 'name': name, 'short': short, 'refLang': reflang})
+        out['translations'].append({'id': tid, 'name': name, 'short': short,
+                                    'refLang': reflang, 'show': show})
         out['texts'][tid] = texts
         status = f'{name}: {len(texts)}/{len(verses)}구절'
+        if vfixed:
+            status += f' · 절번호 보정 {len(vfixed)}건({"; ".join(vfixed)})'
+        if not show:
+            status += ' [내부 기준용 · 앱 미노출]'
         if missing:
             status += f' (누락 {len(missing)}: {", ".join(missing[:5])}{"…" if len(missing) > 5 else ""})'
             warnings.append(status)
@@ -300,6 +406,43 @@ def main():
                 out['texts']['grg'][vid] = new
                 fixed += 1
         print(f'✓ 개역개정 띄어쓰기 복원: {fixed}구절 (기준: 개정국한문판)')
+
+    # 한글 킹제임스 시편 표제 누락 교차 검증
+    # 개정국한문판은 표제를 [ ]로 표시하므로, 표제가 있는 시편의 1절인데
+    # KKJ_PSALM_TITLES에 항목이 없으면 표제가 본문에 섞여 있을 수 있다.
+    if 'kkj' in out['texts'] and os.path.exists(gjkh_path):
+        gc = sqlite3.connect(f'file:{gjkh_path}?mode=ro', uri=True)
+        unchecked = []
+        for v in verses:
+            if v['ref']['book'] != 'Ps':
+                continue
+            start = v['ref']['verses'][0]['start']
+            if start != 1:
+                continue
+            row = gc.execute(
+                'SELECT btext FROM Bible WHERE book=19 AND chapter=? AND verse=1',
+                (v['ref']['chapter'],)).fetchone()
+            has_title = bool(row and row[0].lstrip().startswith('['))
+            if has_title and (v['ref']['chapter'], start) not in KKJ_PSALM_TITLES:
+                unchecked.append(f'{v["id"]} (시 {v["ref"]["chapter"]}:1)')
+        gc.close()
+        if unchecked:
+            warnings.append('한글 킹제임스: 시편 표제가 본문에 섞였을 수 있음 → '
+                            + ', '.join(unchecked))
+            print('⚠ 한글 킹제임스 시편 표제 미확인:', ', '.join(unchecked))
+        else:
+            print('✓ 한글 킹제임스 시편 표제 검증 통과')
+
+    # 앱에 노출하지 않는 역본은 결과에서 제거 (개정국한문 = 내부 기준용)
+    dropped = [t['id'] for t in out['translations'] if not t.get('show')]
+    out['translations'] = [
+        {k: v for k, v in t.items() if k != 'show'}
+        for t in out['translations'] if t.get('show')
+    ]
+    for tid in dropped:
+        out['texts'].pop(tid, None)
+    if dropped:
+        print(f'· 앱 목록에서 제외: {", ".join(dropped)}')
 
     dest = os.path.join(ROOT, 'src/data/translations.json')
     with open(dest, 'w', encoding='utf-8') as f:
