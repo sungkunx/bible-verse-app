@@ -313,7 +313,7 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 
 /* ── 토스트 (뒤로가기 안내 등) ─────────────────────── */
 #toast {
-  position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom) + 34px);
+  position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom) + 84px + var(--player-h, 0px));
   transform: translateX(-50%); z-index: 200;
   background: rgba(43, 42, 39, 0.92); color: #fff;
   padding: 11px 20px; border-radius: 999px; font-size: 0.88rem; font-weight: 500;
@@ -352,6 +352,123 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .sheet-item.on .t-name { font-weight: 800; }
 .sheet-check { width: 20px; text-align: center; }
 
+/* ── 툴바 왼쪽 도구 (읽어주기 / 담기 / 선택) ─────── */
+.tool-controls { grid-column: 1; justify-self: start; display: flex; align-items: center; gap: 4px; }
+.font-btn.on { background: var(--ink); color: var(--card); border-color: var(--ink); }
+.font-btn svg { display: block; }
+
+/* ── 내 그룹 (홈) ─────────────────────────────────── */
+.home-section-head {
+  display: flex; align-items: center; justify-content: space-between;
+  margin: 26px 4px 10px;
+}
+.home-section-head h2 { font-size: 0.85rem; font-weight: 700; color: var(--ink-faint); }
+.text-btn { font-size: 0.82rem; font-weight: 700; color: var(--ink-soft); padding: 4px 6px; }
+.group-card { --accent: #7b6b58; }
+.new-group-btn {
+  width: 100%; padding: 16px 14px; border-radius: 14px; border: 1.5px dashed #d6d2c7;
+  color: var(--ink-soft); font-weight: 600; font-size: 0.9rem; text-align: center;
+}
+.new-group-btn small { display: block; font-weight: 500; font-size: 0.76rem; color: var(--ink-faint); margin-top: 3px; }
+
+/* ── 리스트 선택 모드 ─────────────────────────────── */
+.row-check {
+  flex-shrink: 0; align-self: center; width: 22px; height: 22px; margin-left: 12px;
+  border-radius: 50%; border: 1.5px solid #cfcbc0; display: grid; place-items: center;
+  font-size: 0.72rem; font-weight: 800; color: transparent;
+}
+.verse-row.sel { border-color: color-mix(in srgb, var(--accent) 55%, var(--line)); background: color-mix(in srgb, var(--accent) 5%, var(--card)); }
+.verse-row.sel .row-check { background: var(--accent); border-color: var(--accent); color: #fff; }
+.select-bar {
+  position: sticky; bottom: calc(env(safe-area-inset-bottom) + 10px + var(--player-h, 0px));
+  margin: 0 12px 12px; padding: 8px 8px 8px 12px; z-index: 20;
+  display: flex; align-items: center; gap: 5px;
+  background: var(--ink); color: #fff; border-radius: 16px;
+  box-shadow: 0 8px 22px rgba(40, 36, 28, 0.25);
+}
+.select-bar .sel-count { flex: 1; font-size: 0.86rem; font-weight: 700; white-space: nowrap; }
+.select-bar button {
+  padding: 7px 9px; border-radius: 10px; font-size: 0.8rem; font-weight: 700; color: #fff;
+  background: rgba(255, 255, 255, 0.12); white-space: nowrap; flex-shrink: 0;
+}
+.select-bar button:disabled { opacity: 0.35; }
+
+/* ── 시트 공통 (입력·메뉴) ────────────────────────── */
+.sheet-sub { font-size: 0.8rem; color: var(--ink-faint); margin-left: auto; }
+.sheet-item.danger { color: #c0392b; }
+.sheet-input {
+  width: 100%; padding: 12px 14px; border-radius: 11px; border: 1px solid var(--line);
+  background: #fbfaf6; font: inherit; font-size: 1rem; color: var(--ink);
+}
+.sheet-input:focus { outline: none; border-color: var(--ink-soft); background: #fff; }
+.sheet-btns { display: flex; gap: 8px; margin-top: 12px; }
+.sheet-btns button {
+  flex: 1; padding: 12px; border-radius: 11px; font-weight: 700; font-size: 0.92rem;
+  background: var(--paper); color: var(--ink-soft);
+}
+.sheet-btns button.primary { background: var(--ink); color: #fff; }
+
+/* ── 읽어주기 (TTS) ───────────────────────────────── */
+.tts-now {
+  text-align: center; padding: 4px 8px 12px;
+}
+.tts-now b { display: block; font-size: 1.02rem; letter-spacing: -0.01em; }
+.tts-now span { font-size: 0.82rem; color: var(--ink-faint); }
+.tts-ctrl { display: flex; align-items: center; justify-content: center; gap: 14px; padding-bottom: 12px; }
+.tts-ctrl .nav-btn { font-size: 1.1rem; }
+.tts-play {
+  width: 58px; height: 58px; border-radius: 50%; background: var(--ink); color: #fff;
+  display: grid; place-items: center; box-shadow: 0 4px 12px rgba(40, 36, 28, 0.22);
+}
+.tts-opts { border-top: 1px solid var(--line); padding: 10px 4px 4px; display: flex; flex-direction: column; gap: 8px; }
+.tts-opt { display: flex; align-items: center; gap: 8px; }
+.tts-opt > label { width: 56px; flex-shrink: 0; font-size: 0.82rem; font-weight: 700; color: var(--ink-soft); }
+.chips { display: flex; flex-wrap: wrap; gap: 5px; }
+.chip {
+  padding: 5px 11px; border-radius: 999px; border: 1px solid var(--line);
+  font-size: 0.8rem; font-weight: 600; color: var(--ink-soft); background: var(--card);
+}
+.chip.on { background: var(--ink); border-color: var(--ink); color: #fff; }
+.tts-list-head {
+  display: flex; align-items: center; gap: 6px; margin-top: 12px;
+  border-top: 1px solid var(--line); padding: 12px 4px 6px;
+}
+.tts-list-head b { flex: 1; font-size: 0.85rem; color: var(--ink-soft); }
+.tts-row {
+  display: flex; align-items: center; gap: 4px; border-radius: 10px;
+}
+.tts-row.now { background: color-mix(in srgb, var(--accent) 10%, var(--card)); }
+.tts-row .row-check { margin-left: 6px; }
+.tts-row.on .row-check { background: var(--accent); border-color: var(--accent); color: #fff; }
+.tts-row-check { padding: 9px 4px; }
+.tts-row-main { flex: 1; min-width: 0; text-align: left; padding: 9px 8px 9px 2px; display: flex; gap: 8px; align-items: baseline; }
+.tts-row:not(.on) .tts-row-main { opacity: 0.45; }
+.tts-row-main .code { font-size: 0.78rem; font-weight: 700; color: var(--accent); flex-shrink: 0; }
+.tts-row-main .title { font-size: 0.9rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tts-row-main .eq { margin-left: auto; color: var(--accent); font-size: 0.8rem; flex-shrink: 0; }
+
+/* 미니 플레이어 (화면을 옮겨도 계속 보임) */
+body.has-player { --player-h: 66px; }
+body.has-player .app { padding-bottom: 76px; }
+body.has-player .screen { min-height: calc(100dvh - 76px); }
+#player {
+  position: fixed; z-index: 50; left: 50%; transform: translateX(-50%);
+  bottom: calc(env(safe-area-inset-bottom) + 10px);
+  width: calc(100% - 20px); max-width: 460px;
+  display: none; align-items: center; gap: 6px; padding: 7px 8px 7px 7px;
+  background: var(--card); border: 1px solid var(--line); border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(60, 50, 30, 0.18);
+}
+body.has-player #player { display: flex; }
+#player .p-play {
+  width: 42px; height: 42px; border-radius: 50%; background: var(--ink); color: #fff;
+  display: grid; place-items: center; flex-shrink: 0;
+}
+#player .p-info { flex: 1; min-width: 0; text-align: left; padding: 2px 4px; }
+#player .p-info b { display: block; font-size: 0.88rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#player .p-info span { display: block; font-size: 0.74rem; color: var(--ink-faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#player .icon-btn { flex-shrink: 0; }
+
 @media (max-height: 700px) {
   .deck { min-height: 320px; }
 }
@@ -360,6 +477,7 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 <body>
 <div class="app"><div class="screen" id="root"></div></div>
 <div id="modal"></div>
+<div id="player"></div>
 <div id="toast"></div>
 <script>
 'use strict';
@@ -446,6 +564,34 @@ function saveSet(k, set) {
   try { localStorage.setItem('bmc.' + k + '.v1', JSON.stringify([...set])); } catch (e) {}
 }
 
+/* ── 내 그룹: 사용자가 이름을 붙여 묶은 구절 목록 ──
+ * [{ id, name, ids: [verseId, ...] }] — 담은 순서 유지 */
+function loadGroups() {
+  try {
+    const raw = localStorage.getItem('bmc.groups.v1');
+    const arr = raw ? JSON.parse(raw) : mem.groups || [];
+    return Array.isArray(arr) ? arr.filter(g => g && g.id && Array.isArray(g.ids)) : [];
+  } catch (e) { return mem.groups || []; }
+}
+function saveGroups() {
+  mem.groups = state.groups;
+  try { localStorage.setItem('bmc.groups.v1', JSON.stringify(state.groups)); } catch (e) {}
+}
+const getGroup = id => state.groups.find(g => g.id === id);
+function createGroup(name) {
+  const g = { id: 'g' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), name: name, ids: [] };
+  state.groups.push(g);
+  saveGroups();
+  return g;
+}
+/** 구절들을 그룹에 담는다 (이미 있는 구절은 건너뜀). 새로 담긴 수를 반환 */
+function addToGroup(g, ids) {
+  let n = 0;
+  ids.forEach(id => { if (g.ids.indexOf(id) < 0) { g.ids.push(id); n++; } });
+  saveGroups();
+  return n;
+}
+
 /* ── 글자 크기 배율 (사용자 조절, 저장됨) ────────── */
 const FS_MIN = 0.7, FS_MAX = 1.6, FS_STEP = 0.1;
 function loadFontScale() {
@@ -477,11 +623,18 @@ const state = {
   index: 0,
   flipped: false,
   fontScale: loadFontScale(),
+  groups: [],
+  selecting: false,   // 리스트 선택 모드
+  sel: new Set(),     // 선택된 구절 id
 };
+state.groups = loadGroups();
 applyFontScale(state.fontScale);
 const cur = () => state.stack[state.stack.length - 1];
 
+function exitSelect() { state.selecting = false; state.sel.clear(); }
+
 function push(s) {
+  exitSelect();
   state.stack.push(s);
   if (s.name === 'verses') { state.mode = 'card'; state.index = s.startIndex || 0; state.flipped = false; }
   pushHistory();   // 안드로이드 뒤로가기가 이전 단계로 오도록 기록을 쌓는다
@@ -510,6 +663,10 @@ function currentVerses() {
   const s = cur();
   if (s.kind === 'favorites') return [...state.fav].map(id => verseById.get(id)).filter(Boolean);
   if (s.kind === 'completed') return [...state.done].map(id => verseById.get(id)).filter(Boolean);
+  if (s.kind === 'group') {
+    const g = getGroup(s.groupId);
+    return g ? g.ids.map(id => verseById.get(id)).filter(Boolean) : [];
+  }
   return selectVerses(s);
 }
 
@@ -600,6 +757,15 @@ const esc = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g,
 const ICON_BACK = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>';
 const ICON_HOME = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>';
 
+const svg16 = inner => '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">' + inner + '</svg>';
+const ICON_SPEAK = svg16('<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" fill="currentColor"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M19 5a10 10 0 0 1 0 14"/>');
+const ICON_ADD = svg16('<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><line x1="12" y1="10.5" x2="12" y2="16.5"/><line x1="9" y1="13.5" x2="15" y2="13.5"/>');
+const ICON_SELECT = svg16('<polyline points="3 6 5 8 8.5 4.5"/><polyline points="3 13 5 15 8.5 11.5"/><line x1="12" y1="6.5" x2="21" y2="6.5"/><line x1="12" y1="13.5" x2="21" y2="13.5"/><line x1="12" y1="19.5" x2="21" y2="19.5"/>');
+const ICON_MORE = '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>';
+const ICON_PLAY = '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><polygon points="7 4 20 12 7 20 7 4"/></svg>';
+const ICON_PAUSE = '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>';
+const ICON_CLOSE = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>';
+
 function topbarHTML(title, opts) {
   opts = opts || {};
   return '<header class="topbar">' +
@@ -609,6 +775,7 @@ function topbarHTML(title, opts) {
     '</div>' +
     '<h1 class="topbar-title' + (opts.big ? ' big' : '') + '">' + esc(title) + '</h1>' +
     '<div class="topbar-side topbar-right">' +
+    (opts.more ? '<button class="icon-btn" data-action="group-menu" aria-label="그룹 관리">' + ICON_MORE + '</button>' : '') +
     (opts.lang ? '<button class="pill-btn" data-action="trans-menu">' + esc(curTrans().short) + ' ▾</button>' : '') +
     '</div></header>';
 }
@@ -616,9 +783,32 @@ function topbarHTML(title, opts) {
 /* ── 홈 화면 ──────────────────────────────────── */
 /** 암송집별 암송완료 달성도 */
 function progressOf(collectionId) {
-  const list = selectVerses({ collectionId: collectionId });
+  return progressOfList(selectVerses({ collectionId: collectionId }));
+}
+function progressOfList(list) {
   const done = list.reduce((n, v) => n + (state.done.has(v.id) ? 1 : 0), 0);
   return { done: done, total: list.length, pct: list.length ? Math.round(done / list.length * 100) : 0 };
+}
+
+/** 홈의 '내 그룹' 목록 */
+function homeGroupsHTML() {
+  const cards = state.groups.map(g => {
+    const p = progressOfList(g.ids.map(id => verseById.get(id)).filter(Boolean));
+    return '<button class="collection-card group-card" data-action="open-mygroup" data-id="' + esc(g.id) + '">' +
+      '<span class="collection-stripe"></span>' +
+      '<span class="collection-info">' +
+      '<span class="collection-name">' + esc(g.name) + '</span>' +
+      '<span class="collection-meta">' + p.total + '구절</span>' +
+      '<span class="progress-bar"><i style="width:' + p.pct + '%"></i></span>' +
+      '</span>' +
+      '<span class="collection-stat' + (p.done ? ' has' : '') + '"><b>' + p.pct + '%</b><em>' + p.done + '/' + p.total + '</em></span>' +
+      '<span class="chevron">›</span></button>';
+  }).join('');
+  return '<div class="home-section-head"><h2>내 그룹</h2>' +
+    (state.groups.length ? '<button class="text-btn" data-action="new-group">＋ 새 그룹</button>' : '') + '</div>' +
+    (cards ? '<div class="collection-list">' + cards + '</div>'
+      : '<button class="new-group-btn" data-action="new-group">＋ 새 그룹 만들기' +
+        '<small>구절 목록에서 원하는 구절을 골라 그룹에 담을 수 있어요</small></button>');
 }
 
 function homeHTML() {
@@ -644,7 +834,7 @@ function homeHTML() {
     '<div class="home-shortcuts">' +
     '<button class="shortcut-card" data-action="open-kind" data-kind="favorites"><span class="shortcut-icon star">★</span>즐겨찾기<span class="shortcut-count">' + state.fav.size + '</span></button>' +
     '<button class="shortcut-card" data-action="open-kind" data-kind="completed"><span class="shortcut-icon check">✓</span>암송완료<span class="shortcut-count">' + state.done.size + '</span></button>' +
-    '</div></main>';
+    '</div>' + homeGroupsHTML() + '</main>';
 }
 
 /* ── 그룹(섹션/서브섹션) 화면 ─────────────────── */
@@ -745,24 +935,47 @@ function verseScreenHTML(s, list) {
       '<p class="deck-hint">카드를 탭하면 본문이 가려집니다 · 좌우로 넘겨보세요</p></div>';
   } else {
     const tr = curTrans();
+    const sel = state.selecting;
     inner = '<div class="verse-list">' + list.map((v, i) => {
       const f = cardFooter(v);
       const rr = getVerseTextWithFallback(v, state.trans);
       const text = rr.text;
-      return '<div class="verse-row" style="--accent:' + f.color + '">' +
-        '<button class="verse-row-main" data-action="open-card" data-idx="' + i + '">' +
+      const on = sel && state.sel.has(v.id);
+      return '<div class="verse-row' + (on ? ' sel' : '') + '" style="--accent:' + f.color + '">' +
+        (sel ? '<span class="row-check" data-action="row-sel" data-id="' + v.id + '">✓</span>' : '') +
+        '<button class="verse-row-main" ' + (sel ? 'data-action="row-sel" data-id="' + v.id + '"' : 'data-action="open-card" data-idx="' + i + '"') + '>' +
         '<div class="verse-row-top"><span class="verse-row-code">' + esc(f.code) + '</span>' +
         '<span class="verse-row-title">' + esc(v.title) + '</span></div>' +
         refDualHTML(v.ref, tr.refLang, 'verse-row-ref') +
         '<p class="verse-row-text" lang="' + (rr.fallback ? 'ko' : tr.refLang) + '">' + esc(text) + '</p></button>' +
+        (sel ? '' :
         '<div class="verse-row-actions">' +
         '<button class="row-action' + (state.fav.has(v.id) ? ' star-on' : '') + '" data-action="row-fav" data-id="' + v.id + '">★</button>' +
         '<button class="row-action' + (state.done.has(v.id) ? ' check-on' : '') + '" data-action="row-done" data-id="' + v.id + '">✓</button>' +
-        '</div></div>';
+        '</div>') + '</div>';
     }).join('') + '</div>';
+    if (sel) {
+      const n = state.sel.size;
+      const all = n === list.length;
+      inner += '<div class="select-bar">' +
+        '<span class="sel-count">' + n + '개</span>' +
+        '<button data-action="sel-all">' + (all ? '해제' : '전체') + '</button>' +
+        (s.kind === 'group' ? '<button data-action="sel-remove"' + (n ? '' : ' disabled') + '>빼기</button>' : '') +
+        '<button data-action="sel-add"' + (n ? '' : ' disabled') + '>그룹 담기</button>' +
+        '<button data-action="sel-speak"' + (n ? '' : ' disabled') + '>읽어주기</button>' +
+        '</div>';
+    }
   }
-  return topbarHTML(s.title, { back: true, home: true, lang: true }) +
-    '<div class="toolbar">' +
+  const g = s.kind === 'group' ? getGroup(s.groupId) : null;
+  const tools = list.length ?
+    '<div class="tool-controls">' +
+    '<button class="font-btn" data-action="tts-open" aria-label="읽어주기">' + ICON_SPEAK + '</button>' +
+    (state.mode === 'card'
+      ? '<button class="font-btn" data-action="card-add" aria-label="그룹에 담기">' + ICON_ADD + '</button>'
+      : '<button class="font-btn' + (state.selecting ? ' on' : '') + '" data-action="sel-toggle" aria-label="선택">' + ICON_SELECT + '</button>') +
+    '</div>' : '';
+  return topbarHTML(g ? g.name : s.title, { back: true, home: true, lang: true, more: !!g }) +
+    '<div class="toolbar">' + tools +
     '<div class="mode-toggle">' +
     '<button data-action="mode-card" class="' + (state.mode === 'card' ? 'on' : '') + '">카드</button>' +
     '<button data-action="mode-list" class="' + (state.mode === 'list' ? 'on' : '') + '">리스트</button>' +
@@ -990,6 +1203,389 @@ function openTransMenu() {
     '</div></div>';
 }
 function closeTransMenu() { document.getElementById('modal').innerHTML = ''; }
+const closeModal = closeTransMenu;
+function openSheet(inner, kind) {
+  document.getElementById('modal').innerHTML =
+    '<div class="sheet-overlay" data-action="trans-close"><div class="sheet" data-action="noop" data-sheet="' + (kind || '') + '">' +
+    inner + '</div></div>';
+}
+const sheetKind = () => { const el = document.querySelector('#modal .sheet'); return el ? el.dataset.sheet : ''; };
+
+/* ── 이름 입력 시트 (새 그룹 / 이름 바꾸기) ─────── */
+let promptCb = null;
+function openPrompt(title, value, okLabel, cb) {
+  promptCb = cb;
+  openSheet(
+    '<div class="sheet-title">' + esc(title) + '</div>' +
+    '<input class="sheet-input" id="promptInput" maxlength="40" placeholder="그룹 이름" value="' + esc(value || '') + '" />' +
+    '<div class="sheet-btns"><button data-action="trans-close">취소</button>' +
+    '<button class="primary" data-action="prompt-ok">' + esc(okLabel || '확인') + '</button></div>', 'prompt');
+  const input = document.getElementById('promptInput');
+  setTimeout(() => { input.focus(); input.select(); }, 60);
+}
+function submitPrompt() {
+  const input = document.getElementById('promptInput');
+  const name = input ? input.value.trim() : '';
+  if (!name) { if (input) input.focus(); return; }
+  const cb = promptCb;
+  promptCb = null;
+  closeModal();
+  if (cb) cb(name);
+}
+document.addEventListener('keydown', e => {
+  if (e.target && e.target.id === 'promptInput' && e.key === 'Enter' && !e.isComposing) {
+    e.preventDefault();
+    submitPrompt();
+  }
+});
+
+/* ── 그룹에 담기 시트 ─────────────────────────────
+ * 구절 하나(카드)면 그룹별 포함 여부를 ✓로 보여주고 탭하면 넣고 빼기,
+ * 여러 개(선택 모드)면 탭한 그룹에 모두 담는다. */
+let pickIds = [];
+function openGroupPicker(ids) {
+  pickIds = ids.slice();
+  const single = pickIds.length === 1;
+  openSheet(
+    '<div class="sheet-title">' + (single ? '그룹에 담기' : pickIds.length + '개 구절을 그룹에 담기') + '</div>' +
+    state.groups.map(g => {
+      const has = pickIds.every(id => g.ids.indexOf(id) >= 0);
+      return '<button class="sheet-item' + (has ? ' on' : '') + '" data-action="pick-group" data-id="' + esc(g.id) + '">' +
+        '<span class="sheet-check">' + (has ? '✓' : '') + '</span>' +
+        '<span class="t-name">' + esc(g.name) + '</span>' +
+        '<span class="t-short">' + g.ids.length + '구절</span></button>';
+    }).join('') +
+    '<button class="sheet-item" data-action="pick-new-group"><span class="sheet-check">＋</span>' +
+    '<span class="t-name">새 그룹 만들기</span></button>', 'pick');
+}
+function pickGroup(g) {
+  const single = pickIds.length === 1;
+  if (single && g.ids.indexOf(pickIds[0]) >= 0) {
+    g.ids = g.ids.filter(id => id !== pickIds[0]);
+    saveGroups();
+    showToast('‘' + g.name + '’에서 뺐습니다');
+  } else {
+    const n = addToGroup(g, pickIds);
+    showToast(n ? '‘' + g.name + '’에 ' + (single ? '담았습니다' : n + '개 담았습니다') : '이미 모두 담겨 있습니다');
+  }
+  closeModal();
+  afterGroupChange();
+}
+/** 그룹 내용이 바뀐 뒤 화면 갱신 (현재 그룹 화면이면 목록도 바뀜) */
+function afterGroupChange() {
+  const s = cur();
+  if (s.name === 'home' || s.kind === 'group' || state.selecting) {
+    if (state.selecting) exitSelect();
+    render();
+  }
+}
+
+/* ── 그룹 관리 시트 (그룹 화면의 ⋯) ─────────────── */
+function openGroupMenu(g) {
+  openSheet(
+    '<div class="sheet-title">' + esc(g.name) + '</div>' +
+    '<button class="sheet-item" data-action="group-rename"><span class="sheet-check">✎</span><span class="t-name">이름 바꾸기</span></button>' +
+    '<button class="sheet-item danger" data-action="group-delete"><span class="sheet-check">🗑</span><span class="t-name">그룹 삭제</span></button>', 'menu');
+}
+
+/* ════════════════════════════════════════════════════
+ * 읽어주기 (TTS) — 브라우저 내장 Web Speech API 사용
+ *  · 재생 목록 = 연 화면의 구절들, 체크 해제한 구절은 건너뜀
+ *  · 속도 / 구절마다 반복 횟수 / 구절 사이 간격 / 주소 읽기 / 전체 반복
+ *  · 일시정지는 cancel 후 현재 구절 처음부터 다시 읽는 방식
+ *    (안드로이드 크롬은 speechSynthesis.pause가 제대로 동작하지 않음)
+ * ════════════════════════════════════════════════════ */
+const TTS_OK = typeof window.speechSynthesis !== 'undefined' && typeof window.SpeechSynthesisUtterance !== 'undefined';
+const TTS_LANG = { ko: 'ko-KR', en: 'en-US', ja: 'ja-JP', zh: 'zh-CN', es: 'es-ES', vi: 'vi-VN', hi: 'hi-IN' };
+const TTS_RATES = [0.7, 0.85, 1, 1.2, 1.5];
+const TTS_REPEATS = [1, 2, 3, 5];
+const TTS_GAPS = [1, 3, 5];
+
+function loadTtsOpts() {
+  const d = { rate: 1, repeat: 1, gap: 1, readRef: true, loop: false };
+  try { Object.assign(d, JSON.parse(localStorage.getItem('bmc.tts.v1')) || {}); } catch (e) {}
+  return d;
+}
+const ttsOpts = loadTtsOpts();
+function saveTtsOpts() { try { localStorage.setItem('bmc.tts.v1', JSON.stringify(ttsOpts)); } catch (e) {} }
+
+const tts = {
+  ids: [],          // 재생 목록 (연 화면의 구절 순서)
+  off: new Set(),   // 체크 해제된 구절 (건너뜀)
+  pos: 0,           // 지금 읽는(읽을) 구절의 ids 인덱스
+  playing: false,
+  gen: 0,           // 재생 세대 — 멈추거나 건너뛰면 올려서 이전 콜백을 무효화
+  src: null,        // 목록을 연 화면 (카드 화면이면 읽는 카드로 따라 넘김)
+  title: '',
+  utt: null,        // 크롬에서 발화 객체가 GC되면 onend가 안 오는 문제 방지
+};
+
+let ttsVoices = [];
+function refreshVoices() { try { ttsVoices = speechSynthesis.getVoices() || []; } catch (e) { ttsVoices = []; } }
+if (TTS_OK) {
+  refreshVoices();
+  try { speechSynthesis.addEventListener('voiceschanged', refreshVoices); } catch (e) {}
+}
+function pickVoice(tag) {
+  const norm = s => String(s || '').replace('_', '-').toLowerCase();
+  const want = norm(tag), base = want.split('-')[0];
+  const exact = ttsVoices.filter(v => norm(v.lang) === want);
+  const loose = exact.length ? exact : ttsVoices.filter(v => norm(v.lang).split('-')[0] === base);
+  return loose.find(v => v.localService) || loose[0] || null;
+}
+
+/** 주소를 소리 내어 읽기 좋은 형태로 ("요한복음 3장 16절", "시편 23편 1절에서 3절") */
+function spokenRef(ref, lang) {
+  if (lang !== 'ko') return fmtRef(ref, lang).replace(/-/g, '–');
+  const b = BOOKS[ref.book];
+  const unit = ref.book === 'Ps' ? '편' : '장';
+  const segs = ref.verses.map(seg =>
+    seg.start + '절' + (seg.end ? '에서 ' + seg.end + '절' : '') + (seg.suffix ? ' ' + seg.suffix : ''));
+  return (b ? b.ko : ref.book) + ' ' + ref.chapter + unit + ' ' + segs.join(', ');
+}
+
+/** 긴 본문은 문장 단위로 잘라 읽는다 (크롬의 긴 발화 끊김 방지) */
+function splitForSpeech(text) {
+  const parts = String(text || '').match(/[^.!?。！？]+[.!?。！？]*["”’」』)]*\s*/g) || [];
+  const out = [];
+  let buf = '';
+  parts.forEach(p => {
+    if ((buf + p).length > 160 && buf) { out.push(buf.trim()); buf = ''; }
+    buf += p;
+  });
+  if (buf.trim()) out.push(buf.trim());
+  // 한 문장이 너무 길면 쉼표에서 한 번 더 자른다
+  return out.flatMap(s => {
+    if (s.length <= 220) return [s];
+    const res = [];
+    let b2 = '';
+    (s.match(/[^,，、]+[,，、]?\s*/g) || [s]).forEach(q => {
+      if ((b2 + q).length > 160 && b2) { res.push(b2.trim()); b2 = ''; }
+      b2 += q;
+    });
+    if (b2.trim()) res.push(b2.trim());
+    return res;
+  });
+}
+
+function say(text, lang, gen, cb) {
+  const u = new SpeechSynthesisUtterance(text);
+  const tag = TTS_LANG[lang] || lang;
+  u.lang = tag;
+  const voice = pickVoice(tag);
+  if (voice) u.voice = voice;
+  u.rate = ttsOpts.rate;
+  let fired = false;
+  const fin = delay => { if (fired) return; fired = true; if (gen === tts.gen) setTimeout(cb, delay); };
+  u.onend = () => fin(0);
+  u.onerror = () => fin(250);   // 음성 엔진 오류 시 다음으로 넘어가되 너무 빠르게 돌지 않게
+  tts.utt = u;
+  speechSynthesis.speak(u);
+}
+function sayAll(chunks, lang, gen, cb) {
+  let i = 0;
+  const step = () => {
+    if (gen !== tts.gen) return;
+    if (i >= chunks.length) { cb(); return; }
+    say(chunks[i++], lang, gen, step);
+  };
+  step();
+}
+const wait = (sec, gen, cb) => setTimeout(() => { if (gen === tts.gen) cb(); }, sec * 1000);
+
+const ttsActive = i => i >= 0 && i < tts.ids.length && !tts.off.has(tts.ids[i]);
+function ttsFind(from, dir) {
+  for (let i = from; i >= 0 && i < tts.ids.length; i += dir) if (ttsActive(i)) return i;
+  return -1;
+}
+const ttsCount = () => tts.ids.filter(id => !tts.off.has(id)).length;
+
+/** 현재 구절을 (반복 횟수만큼) 읽고 다음 구절로 넘어간다 */
+function speakCurrent(gen) {
+  if (gen !== tts.gen) return;
+  const v = verseById.get(tts.ids[tts.pos]);
+  if (!v) { ttsFinish(); return; }
+  const r = getVerseTextWithFallback(v, state.trans);
+  const lang = r.fallback ? 'ko' : curTrans().refLang;
+  const chunks = [];
+  if (ttsOpts.readRef) chunks.push(lang === 'ko' ? v.title + '. ' + spokenRef(v.ref, 'ko') + '.' : spokenRef(v.ref, lang) + '.');
+  splitForSpeech(r.text).forEach(c => chunks.push(c));
+  let rep = 0;
+  const once = () => sayAll(chunks, lang, gen, () => {
+    rep++;
+    if (rep < ttsOpts.repeat) { wait(ttsOpts.gap, gen, once); return; }
+    wait(ttsOpts.gap, gen, () => {
+      let next = ttsFind(tts.pos + 1, 1);
+      if (next < 0 && ttsOpts.loop) next = ttsFind(0, 1);
+      if (next < 0) { ttsFinish(); return; }
+      tts.pos = next;
+      updateTtsUI(true);
+      speakCurrent(gen);
+    });
+  });
+  once();
+}
+
+function ttsPlay() {
+  if (!TTS_OK) { showToast('이 브라우저는 읽어주기를 지원하지 않습니다'); return; }
+  if (!ttsCount()) { showToast('읽을 구절을 선택하세요'); return; }
+  if (!ttsActive(tts.pos)) tts.pos = ttsFind(tts.pos, 1) >= 0 ? ttsFind(tts.pos, 1) : ttsFind(0, 1);
+  const gen = ++tts.gen;
+  tts.playing = true;
+  try { speechSynthesis.cancel(); speechSynthesis.resume(); } catch (e) {}
+  updateTtsUI(true);
+  // cancel 직후 곧바로 speak하면 무시되는 브라우저가 있어 잠깐 쉬었다 시작
+  setTimeout(() => speakCurrent(gen), 80);
+}
+function ttsPause() {
+  tts.gen++;
+  tts.playing = false;
+  if (TTS_OK) try { speechSynthesis.cancel(); } catch (e) {}
+  updateTtsUI();
+}
+function ttsFinish() {
+  tts.gen++;
+  tts.playing = false;
+  tts.pos = Math.max(0, ttsFind(0, 1));
+  updateTtsUI();
+}
+function ttsClose() {
+  ttsPause();
+  tts.ids = [];
+  tts.off.clear();
+  tts.src = null;
+  updateTtsUI();
+  if (sheetKind() === 'tts') closeModal();
+}
+function ttsJump(dir) {
+  let i = ttsFind(tts.pos + dir, dir);
+  if (i < 0 && ttsOpts.loop) i = dir > 0 ? ttsFind(0, 1) : ttsFind(tts.ids.length - 1, -1);
+  if (i < 0) return;
+  tts.pos = i;
+  if (tts.playing) ttsPlay(); else updateTtsUI(true);
+}
+function ttsPlayAt(i) {
+  tts.off.delete(tts.ids[i]);
+  tts.pos = i;
+  ttsPlay();
+}
+
+/** 화면의 구절 목록을 재생 목록으로 불러온다.
+ *  onlyIds가 있으면 그 구절만 체크된 상태로 시작 */
+function ttsLoad(list, title, startId, onlyIds) {
+  ttsPause();
+  tts.ids = list.map(v => v.id);
+  tts.off = new Set(onlyIds ? tts.ids.filter(id => !onlyIds.has(id)) : []);
+  tts.title = title;
+  tts.src = cur();
+  const at = startId ? tts.ids.indexOf(startId) : -1;
+  tts.pos = at >= 0 && ttsActive(at) ? at : Math.max(0, ttsFind(0, 1));
+}
+
+/* 재생 중인 카드 화면을 읽는 구절로 따라 넘긴다 */
+function syncDeckToTts() {
+  if (!tts.playing || cur() !== tts.src || state.mode !== 'card' || drag) return;
+  const list = currentVerses();
+  const i = list.findIndex(v => v.id === tts.ids[tts.pos]);
+  if (i >= 0 && i !== state.index) {
+    state.index = i;
+    state.flipped = false;
+    updateDeck('stack');
+  }
+}
+
+/* ── 읽어주기 화면 (시트 + 미니 플레이어) ───────── */
+function ttsVerseLabel() {
+  const v = verseById.get(tts.ids[tts.pos]);
+  if (!v) return { title: '', sub: '' };
+  const n = tts.ids.slice(0, tts.pos + 1).filter(id => !tts.off.has(id)).length;
+  return {
+    title: v.title,
+    sub: (ttsActive(tts.pos) ? n + ' / ' + ttsCount() + ' · ' : '') + fmtRef(v.ref, 'ko') + (tts.title ? ' · ' + tts.title : ''),
+  };
+}
+
+function ttsSheetInner() {
+  const L = ttsVerseLabel();
+  const chips = (key, arr, fmt) => '<div class="chips">' + arr.map(x =>
+    '<button class="chip' + (ttsOpts[key] === x ? ' on' : '') + '" data-action="tts-opt" data-key="' + key + '" data-val="' + x + '">' + fmt(x) + '</button>').join('') + '</div>';
+  const toggle = (key, label) => '<button class="chip' + (ttsOpts[key] ? ' on' : '') + '" data-action="tts-opt" data-key="' + key + '">' + label + '</button>';
+  const all = ttsCount() === tts.ids.length;
+  return '<div class="sheet-title">읽어주기 · ' + esc(curTrans().short) + '</div>' +
+    '<div class="tts-now"><b>' + esc(L.title || '—') + '</b><span>' + esc(L.sub) + '</span></div>' +
+    '<div class="tts-ctrl">' +
+    '<button class="nav-btn" data-action="tts-prev" aria-label="이전 구절">⏮</button>' +
+    '<button class="tts-play" data-action="tts-toggle" aria-label="' + (tts.playing ? '일시정지' : '재생') + '">' + (tts.playing ? ICON_PAUSE : ICON_PLAY) + '</button>' +
+    '<button class="nav-btn" data-action="tts-next" aria-label="다음 구절">⏭</button>' +
+    '</div>' +
+    '<div class="tts-opts">' +
+    '<div class="tts-opt"><label>속도</label>' + chips('rate', TTS_RATES, x => x + '×') + '</div>' +
+    '<div class="tts-opt"><label>반복</label>' + chips('repeat', TTS_REPEATS, x => x + '번') + '</div>' +
+    '<div class="tts-opt"><label>간격</label>' + chips('gap', TTS_GAPS, x => x + '초') + '</div>' +
+    '<div class="tts-opt"><label>옵션</label><div class="chips">' + toggle('readRef', '제목·주소 읽기') + toggle('loop', '목록 반복') + '</div></div>' +
+    '</div>' +
+    '<div class="tts-list-head"><b>읽을 구절 ' + ttsCount() + ' / ' + tts.ids.length + '</b>' +
+    '<button class="text-btn" data-action="tts-all">' + (all ? '전체 해제' : '전체 선택') + '</button></div>' +
+    tts.ids.map((id, i) => {
+      const v = verseById.get(id);
+      if (!v) return '';
+      const f = cardFooter(v);
+      const on = !tts.off.has(id);
+      const now = i === tts.pos;
+      return '<div class="tts-row' + (on ? ' on' : '') + (now ? ' now' : '') + '" style="--accent:' + f.color + '">' +
+        '<button class="tts-row-check" data-action="tts-check" data-idx="' + i + '" aria-label="읽기 포함"><span class="row-check">✓</span></button>' +
+        '<button class="tts-row-main" data-action="tts-at" data-idx="' + i + '">' +
+        '<span class="code">' + esc(f.code) + '</span><span class="title">' + esc(v.title) + '</span>' +
+        (now && tts.playing ? '<span class="eq">🔊</span>' : '') + '</button></div>';
+    }).join('');
+}
+
+function openTtsSheet() {
+  openSheet(ttsSheetInner(), 'tts');
+  const now = document.querySelector('#modal .tts-row.now');
+  if (now) now.scrollIntoView({ block: 'nearest' });
+}
+
+function updateTtsUI(follow) {
+  // 미니 플레이어
+  const p = document.getElementById('player');
+  const show = tts.ids.length > 0;
+  document.body.classList.toggle('has-player', show);
+  if (show) {
+    const L = ttsVerseLabel();
+    p.innerHTML =
+      '<button class="p-play" data-action="tts-toggle" aria-label="' + (tts.playing ? '일시정지' : '재생') + '">' + (tts.playing ? ICON_PAUSE : ICON_PLAY) + '</button>' +
+      '<button class="p-info" data-action="tts-sheet"><b>' + esc(L.title) + '</b><span>' + esc(L.sub) + '</span></button>' +
+      '<button class="icon-btn" data-action="tts-next" aria-label="다음 구절">⏭</button>' +
+      '<button class="icon-btn" data-action="tts-close" aria-label="읽어주기 닫기">' + ICON_CLOSE + '</button>';
+  } else {
+    p.innerHTML = '';
+  }
+  // 열려 있는 시트 (스크롤 위치 유지)
+  if (sheetKind() === 'tts') {
+    const sh = document.querySelector('#modal .sheet');
+    const top = sh.scrollTop;
+    sh.innerHTML = ttsSheetInner();
+    sh.scrollTop = top;
+    if (follow) {
+      const now = sh.querySelector('.tts-row.now');
+      if (now) now.scrollIntoView({ block: 'nearest' });
+    }
+  }
+  if (follow) syncDeckToTts();
+}
+
+/** 화면의 🔊 버튼 — 지금 보고 있는 목록으로 읽어주기를 연다 */
+function openTtsFromScreen(onlyIds) {
+  const list = currentVerses();
+  if (!list.length) return;
+  const s = cur();
+  const g = s.kind === 'group' ? getGroup(s.groupId) : null;
+  const startId = state.mode === 'card' && !onlyIds ? (list[state.index] || {}).id : null;
+  ttsLoad(list, g ? g.name : s.title, startId, onlyIds);
+  updateTtsUI();
+  openTtsSheet();
+}
 
 /* ── 렌더 ─────────────────────────────────────── */
 const root = document.getElementById('root');
@@ -1041,7 +1637,7 @@ document.addEventListener('click', e => {
         : col.shortName + ' 전체',
     });
   }
-  else if (a === 'mode-card') { state.mode = 'card'; render(); }
+  else if (a === 'mode-card') { state.mode = 'card'; exitSelect(); render(); }
   else if (a === 'mode-list') { state.mode = 'list'; render(); }
   else if (a === 'font-inc' || a === 'font-dec') {
     const d = a === 'font-inc' ? FS_STEP : -FS_STEP;
@@ -1049,7 +1645,7 @@ document.addEventListener('click', e => {
     applyFontScale(state.fontScale);
     render(); // 버튼 활성 상태 갱신 + 카드 자동 맞춤 재계산
   }
-  else if (a === 'open-card') { state.mode = 'card'; state.index = +btn.dataset.idx; state.flipped = false; render(); }
+  else if (a === 'open-card') { exitSelect(); state.mode = 'card'; state.index = +btn.dataset.idx; state.flipped = false; render(); }
   else if (a === 'prev') goCard(-1);
   else if (a === 'next') goCard(1);
   else if (a === 'quiz-check') runQuizCheck();
@@ -1061,6 +1657,121 @@ document.addEventListener('click', e => {
   else if (a === 'row-fav' || a === 'row-done') {
     toggleSet(a === 'row-fav' ? 'fav' : 'done', btn.dataset.id);
     render();
+  }
+  /* ── 내 그룹 ── */
+  else if (a === 'open-mygroup') {
+    const g = getGroup(btn.dataset.id);
+    if (g) push({ name: 'verses', kind: 'group', groupId: g.id, title: g.name });
+  }
+  else if (a === 'new-group') {
+    openPrompt('새 그룹', '', '만들기', name => {
+      createGroup(name);
+      showToast('‘' + name + '’ 그룹을 만들었습니다');
+      render();
+    });
+  }
+  else if (a === 'card-add') {
+    const v = currentVerses()[state.index];
+    if (v) openGroupPicker([v.id]);
+  }
+  else if (a === 'pick-group') { const g = getGroup(btn.dataset.id); if (g) pickGroup(g); }
+  else if (a === 'pick-new-group') {
+    const ids = pickIds.slice();
+    openPrompt('새 그룹', '', '만들고 담기', name => {
+      const g = createGroup(name);
+      addToGroup(g, ids);
+      showToast('‘' + name + '’에 ' + (ids.length === 1 ? '담았습니다' : ids.length + '개 담았습니다'));
+      afterGroupChange();
+    });
+  }
+  else if (a === 'prompt-ok') submitPrompt();
+  else if (a === 'group-menu') { const g = getGroup(s.groupId); if (g) openGroupMenu(g); }
+  else if (a === 'group-rename') {
+    const g = getGroup(s.groupId);
+    if (g) openPrompt('이름 바꾸기', g.name, '저장', name => { g.name = name; saveGroups(); render(); });
+  }
+  else if (a === 'group-delete') {
+    const g = getGroup(s.groupId);
+    closeModal();
+    if (g && confirm('‘' + g.name + '’ 그룹을 삭제할까요?\n(구절 자체와 즐겨찾기·암송완료 기록은 그대로 남습니다)')) {
+      state.groups = state.groups.filter(x => x !== g);
+      saveGroups();
+      showToast('그룹을 삭제했습니다');
+      pop();
+    }
+  }
+  /* ── 리스트 선택 모드 ── */
+  else if (a === 'sel-toggle') {
+    if (state.selecting) exitSelect(); else state.selecting = true;
+    render();
+  }
+  else if (a === 'row-sel') {
+    const id = btn.dataset.id;
+    state.sel.has(id) ? state.sel.delete(id) : state.sel.add(id);
+    const y = window.scrollY;
+    render();
+    window.scrollTo(0, y);
+  }
+  else if (a === 'sel-all') {
+    const list = currentVerses();
+    if (state.sel.size === list.length) state.sel.clear();
+    else list.forEach(v => state.sel.add(v.id));
+    const y = window.scrollY;
+    render();
+    window.scrollTo(0, y);
+  }
+  else if (a === 'sel-add') {
+    if (state.sel.size) openGroupPicker(currentVerses().filter(v => state.sel.has(v.id)).map(v => v.id));
+  }
+  else if (a === 'sel-remove') {
+    const g = getGroup(s.groupId);
+    if (g && state.sel.size) {
+      const n = state.sel.size;
+      g.ids = g.ids.filter(id => !state.sel.has(id));
+      saveGroups();
+      exitSelect();
+      showToast(n + '개 구절을 그룹에서 뺐습니다');
+      render();
+    }
+  }
+  else if (a === 'sel-speak') {
+    if (state.sel.size) {
+      const only = new Set(state.sel);
+      exitSelect();
+      render();
+      openTtsFromScreen(only);
+    }
+  }
+  /* ── 읽어주기 ── */
+  else if (a === 'tts-open') openTtsFromScreen(state.selecting && state.sel.size ? new Set(state.sel) : null);
+  else if (a === 'tts-sheet') openTtsSheet();
+  else if (a === 'tts-toggle') tts.playing ? ttsPause() : ttsPlay();
+  else if (a === 'tts-prev') ttsJump(-1);
+  else if (a === 'tts-next') ttsJump(1);
+  else if (a === 'tts-close') ttsClose();
+  else if (a === 'tts-at') ttsPlayAt(+btn.dataset.idx);
+  else if (a === 'tts-check') {
+    const i = +btn.dataset.idx, id = tts.ids[i];
+    tts.off.has(id) ? tts.off.delete(id) : tts.off.add(id);
+    // 읽고 있던 구절을 빼면 다음 구절로 넘어간다
+    if (i === tts.pos && tts.off.has(id)) {
+      const nx = ttsFind(i + 1, 1) >= 0 ? ttsFind(i + 1, 1) : ttsFind(0, 1);
+      if (nx < 0) { ttsPause(); return; }
+      tts.pos = nx;
+      if (tts.playing) { ttsPlay(); return; }
+    }
+    updateTtsUI();
+  }
+  else if (a === 'tts-all') {
+    if (ttsCount() === tts.ids.length) { ttsPause(); tts.ids.forEach(id => tts.off.add(id)); }
+    else tts.off.clear();
+    updateTtsUI();
+  }
+  else if (a === 'tts-opt') {
+    const k = btn.dataset.key;
+    ttsOpts[k] = btn.dataset.val == null ? !ttsOpts[k] : +btn.dataset.val;
+    saveTtsOpts();
+    updateTtsUI();   // 속도 등은 다음 문장부터 적용
   }
 });
 
@@ -1228,20 +1939,27 @@ let exitArmedAt = 0;
 let exiting = false;   // 종료 진행 중이면 더 이상 가로채지 않는다
 window.addEventListener('popstate', () => {
   if (exiting) return;
-  // 1) 역본 시트가 열려 있으면 먼저 닫는다
+  // 1) 시트(역본·그룹·읽어주기)가 열려 있으면 먼저 닫는다
   if (document.getElementById('modal').innerHTML) {
     closeTransMenu();
     pushHistory();
     return;
   }
-  // 2) 앱 안에서 한 단계 뒤로
+  // 2) 리스트 선택 모드면 선택부터 끝낸다
+  if (state.selecting) {
+    exitSelect();
+    pushHistory();
+    render();
+    return;
+  }
+  // 3) 앱 안에서 한 단계 뒤로
   if (state.stack.length > 1) {
     state.stack.pop();
     pushHistory();
     render();
     return;
   }
-  // 3) 홈: 2초 안에 다시 누르면 그대로 나간다
+  // 4) 홈: 2초 안에 다시 누르면 그대로 나간다
   if (Date.now() - exitArmedAt < 2000) {
     exiting = true;
     setTimeout(() => history.back(), 0);
