@@ -95,18 +95,20 @@ HTML 파일(오프라인)에서는 기기 음성으로 읽습니다.
 python3 scripts/generate_audio.py --dry-run          # 만들 분량(글자 수) 확인
 python3 scripts/generate_audio.py --sample           # 한국어 음성별 샘플 → audio/_samples/
 python3 scripts/generate_audio.py --voice ko-KR-Wavenet-A --limit 5   # 5구절 먼저
-python3 scripts/generate_audio.py                    # 개역개정 전체 (바뀐 것만)
-python3 scripts/generate_audio.py --trans niv nlt    # 다른 역본 (언어별 WaveNet 자동 선택)
+python3 scripts/generate_audio.py                    # 암송카드 원문 전체 (바뀐 것만)
+python3 scripts/generate_audio.py --trans grg niv    # 다른 역본 (언어별 WaveNet 자동 선택)
 ```
 
 - 역본마다 쓴 음성은 manifest에 기록되어 다음 실행에도 유지되고,
   `--voice`로 바꾸면 그 역본 전체를 다시 만듭니다
-- 분량: 개역개정 약 4.8만 자, 11개 역본 전체 약 70만 자
+- 기본 대상은 **암송카드 원문**(`orig`, `verses.json`의 카드 본문) — 앱에서
+  역본을 `원문`으로 골랐을 때 이 파일로 읽고, 다른 역본은 기기 음성으로 읽음
+- 분량: 원문 약 4.8만 자, 11개 역본 전체 약 70만 자
   (WaveNet 월 무료 한도 100만 자 안 — 요금·한도는 Google 공식 페이지에서 확인)
-- 개역개정 한 벌 mp3는 약 30~50MB라 저장소에 그대로 커밋해도 되지만,
+- 원문 한 벌 mp3는 약 30~50MB라 저장소에 그대로 커밋해도 되지만,
   여러 역본으로 늘리면 Cloudflare R2 같은 별도 저장소로 옮기고
   템플릿의 `AUDIO_BASE`를 바꾸는 것을 권장
-- **저작권**: 개역개정·NIV·NLT 등은 저작권이 있는 역본이라, 음성으로 만들어
+- **저작권**: 원문(개역 계열)·개역개정·NIV·NLT 등은 저작권이 있는 본문이라, 음성으로 만들어
   공개 배포하기 전에 이용 허락을 확인할 것
 
 ### 암송 타이핑 채점

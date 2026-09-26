@@ -2,6 +2,8 @@
 """
 Google Cloud Text-to-Speech로 구절 음성 파일(mp3)을 만든다.
 
+  기본 대상은 '암송카드 원문'(역본 id: orig, verses.json의 texts.ko)이다.
+
   audio/<역본>/<구절id>.mp3       본문
   audio/<역본>/<구절id>.ref.mp3   제목·주소 ("구원의 확신. 요한일서 5장 11절에서 12절.")
   audio/manifest.json             파일이 있는 구절 목록 + 본문 해시
@@ -18,8 +20,8 @@ Google Cloud Text-to-Speech로 구절 음성 파일(mp3)을 만든다.
   python3 scripts/generate_audio.py --list-voices ko-KR     # 쓸 수 있는 음성 목록
   python3 scripts/generate_audio.py --sample                # 음성별 샘플 → audio/_samples/
   python3 scripts/generate_audio.py --limit 5               # 5구절만 먼저 만들어 보기
-  python3 scripts/generate_audio.py                         # 개역개정 전체 (바뀐 것만)
-  python3 scripts/generate_audio.py --trans grg niv --voice ko-KR-Wavenet-A
+  python3 scripts/generate_audio.py                         # 원문 전체 (바뀐 것만)
+  python3 scripts/generate_audio.py --trans grg             # 다른 역본 (개역개정 등)
   python3 scripts/generate_audio.py --dry-run               # 만들 구절 수·글자 수만 확인
 """
 import argparse, base64, json, os, subprocess, sys, time, urllib.error, urllib.request
@@ -144,7 +146,7 @@ def save_manifest(m):
 
 def main():
     ap = argparse.ArgumentParser(description='Google Cloud TTS로 구절 음성 파일 생성')
-    ap.add_argument('--trans', nargs='+', default=['grg'], help='역본 id (기본: grg 개역개정)')
+    ap.add_argument('--trans', nargs='+', default=['orig'], help='역본 id (기본: orig 암송카드 원문)')
     ap.add_argument('--voice', help='음성 이름 (예: ko-KR-Wavenet-A). 역본 하나일 때만')
     ap.add_argument('--only', nargs='+', help='이 구절 id만')
     ap.add_argument('--limit', type=int, help='앞에서부터 N구절만')
@@ -158,6 +160,9 @@ def main():
     verses = json.load(open(os.path.join(ROOT, 'src/data/verses.json'), encoding='utf-8'))['verses']
     books = load_books()
     tmeta = {t['id']: t for t in trans['translations']}
+    # '암송카드 원문' — 역본 DB가 아니라 카드에 원래 입력돼 있던 본문
+    tmeta['orig'] = {'id': 'orig', 'refLang': 'ko'}
+    trans['texts']['orig'] = {v['id']: (v.get('texts') or {}).get('ko') for v in verses}
 
     if args.list_voices:
         for v in sorted(list_voices(auth(), args.list_voices), key=lambda x: x['name']):
@@ -168,7 +173,7 @@ def main():
         # 첫 구절을 한국어 음성 종류별로 만들어 들어보고 고를 수 있게
         cred = auth()
         v = verses[0]
-        text = ref_text(v, 'ko', books) + ' ' + trans['texts']['grg'][v['id']]
+        text = ref_text(v, 'ko', books) + ' ' + trans['texts']['orig'][v['id']]
         names = [x['name'] for x in list_voices(cred, 'ko-KR')
                  if any(k in x['name'] for k in ('Wavenet', 'Neural2', 'Chirp3-HD'))]
         out = os.path.join(AUDIO_DIR, '_samples')
