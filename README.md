@@ -63,6 +63,52 @@ npm run build    # 배포용 빌드 → dist/
 - 일시정지 후 다시 재생하면 해당 구절 처음부터 읽음 (안드로이드 크롬의
   `speechSynthesis.pause()`가 불안정해 cancel 방식으로 구현)
 
+### AI 음성 파일 (Google Cloud TTS)
+
+미리 만든 mp3가 있는 역본은 파일로 재생하고(시트 제목에 `AI 음성` 표시),
+없는 역본·구절은 위의 기기 음성으로 읽습니다. 파일 재생은 화면이 꺼져도
+계속되고 잠금화면·이어폰 버튼으로 조작할 수 있습니다(Media Session API).
+구절 사이 간격도 무음 오디오로 채워 백그라운드에서 끊기지 않게 했습니다.
+
+```
+audio/manifest.json          파일이 있는 구절 + 본문 해시(FNV-1a)
+audio/<역본>/<구절id>.mp3      본문
+audio/<역본>/<구절id>.ref.mp3  제목·주소 ("구원의 확신. 요한일서 5장 11절에서 12절.")
+```
+
+본문이 바뀌어 해시가 맞지 않는 구절은 앱이 자동으로 기기 음성으로 읽고,
+스크립트를 다시 돌리면 바뀐 구절만 새로 만듭니다. 파일은 `index.html` 기준
+상대 경로(`audio/`)로 불러오므로 GitHub Pages에서 동작하고, 내려받은 단일
+HTML 파일(오프라인)에서는 기기 음성으로 읽습니다.
+
+**준비 (한 번만)**
+
+1. [Google Cloud 콘솔](https://console.cloud.google.com/)에서 프로젝트를 만들고
+   결제 계정 연결 → **Cloud Text-to-Speech API** 사용 설정
+2. 사용자 인증 정보 → **API 키** 생성 → 키 제한에서 *Cloud Text-to-Speech API*만 허용
+3. 결제 → **예산 및 알림**에서 예산(예: $1)을 걸어 무료 한도 초과를 알림받기
+4. `export GOOGLE_TTS_API_KEY=발급받은키` (키는 절대 커밋하지 않기)
+
+**생성**
+
+```bash
+python3 scripts/generate_audio.py --dry-run          # 만들 분량(글자 수) 확인
+python3 scripts/generate_audio.py --sample           # 한국어 음성별 샘플 → audio/_samples/
+python3 scripts/generate_audio.py --voice ko-KR-Wavenet-A --limit 5   # 5구절 먼저
+python3 scripts/generate_audio.py                    # 개역개정 전체 (바뀐 것만)
+python3 scripts/generate_audio.py --trans niv nlt    # 다른 역본 (언어별 WaveNet 자동 선택)
+```
+
+- 역본마다 쓴 음성은 manifest에 기록되어 다음 실행에도 유지되고,
+  `--voice`로 바꾸면 그 역본 전체를 다시 만듭니다
+- 분량: 개역개정 약 4.8만 자, 11개 역본 전체 약 70만 자
+  (WaveNet 월 무료 한도 100만 자 안 — 요금·한도는 Google 공식 페이지에서 확인)
+- 개역개정 한 벌 mp3는 약 30~50MB라 저장소에 그대로 커밋해도 되지만,
+  여러 역본으로 늘리면 Cloudflare R2 같은 별도 저장소로 옮기고
+  템플릿의 `AUDIO_BASE`를 바꾸는 것을 권장
+- **저작권**: 개역개정·NIV·NLT 등은 저작권이 있는 역본이라, 음성으로 만들어
+  공개 배포하기 전에 이용 허락을 확인할 것
+
 ### 암송 타이핑 채점
 
 카드 뒷면에 입력창과 '확인' 버튼이 있어 외운 본문을 직접 쳐보고 맞춰볼 수

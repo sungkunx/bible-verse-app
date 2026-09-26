@@ -3,3 +3,6 @@ dist
 .DS_Store
 # 성경 DB 원본 (용량 큼 — 추출된 translations.json만 커밋)
 bibledb/
+# 음성 비교 샘플 (generate_audio.py --sample) — 배포하지 않음
+audio/_samples/
+__pycache__/
