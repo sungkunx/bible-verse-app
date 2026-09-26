@@ -19,6 +19,7 @@
   --line: #e4e1d8;
   --star: #e0a52c;
   --check: #2f9e63;
+  --speak: #3d6f9e; /* 읽어주기 버튼 */
 }
 
 html, body { height: 100%; }
@@ -126,7 +127,7 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 
 /* ── 툴바: 카드/리스트 토글 + 글자 조절 ───────────── */
 .toolbar {
-  display: grid; grid-template-columns: 1fr auto 1fr; align-items: center;
+  display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; column-gap: 6px;
   margin: 4px 0 2px; padding: 0 14px;
 }
 .mode-toggle {
@@ -138,6 +139,10 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   color: var(--ink-soft);
 }
 .mode-toggle button.on { background: var(--card); color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+/* 좁은 화면: 넓어진 읽어주기 버튼과 겹치거나 글자가 줄바꿈되지 않게 */
+.mode-toggle button { white-space: nowrap; }
+@media (max-width: 400px) { .mode-toggle button { padding: 6px 14px; } }
+@media (max-width: 340px) { .toolbar { column-gap: 4px; } .mode-toggle button { padding: 6px 8px; } }
 .font-controls { grid-column: 3; justify-self: end; display: flex; align-items: center; gap: 4px; }
 .font-btn {
   width: 32px; height: 32px; border-radius: 50%; font-size: 1.05rem; line-height: 1;
@@ -356,6 +361,8 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .tool-controls { grid-column: 1; justify-self: start; display: flex; align-items: center; gap: 4px; }
 .font-btn.on { background: var(--ink); color: var(--card); border-color: var(--ink); }
 .font-btn svg { display: block; }
+/* 읽어주기: 다른 도구 버튼보다 가로 2배, 색으로 구분 */
+.font-btn.speak-btn { width: 64px; border-radius: 999px; background: var(--speak); border-color: var(--speak); color: #fff; }
 
 /* ── 내 그룹 (홈) ─────────────────────────────────── */
 .home-section-head {
@@ -969,7 +976,7 @@ function verseScreenHTML(s, list) {
   const g = s.kind === 'group' ? getGroup(s.groupId) : null;
   const tools = list.length ?
     '<div class="tool-controls">' +
-    '<button class="font-btn" data-action="tts-open" aria-label="읽어주기">' + ICON_SPEAK + '</button>' +
+    '<button class="font-btn speak-btn" data-action="tts-open" aria-label="읽어주기">' + ICON_SPEAK + '</button>' +
     (state.mode === 'card'
       ? '<button class="font-btn" data-action="card-add" aria-label="그룹에 담기">' + ICON_ADD + '</button>'
       : '<button class="font-btn' + (state.selecting ? ' on' : '') + '" data-action="sel-toggle" aria-label="선택">' + ICON_SELECT + '</button>') +
@@ -1298,7 +1305,7 @@ function openGroupMenu(g) {
 const TTS_OK = typeof window.speechSynthesis !== 'undefined' && typeof window.SpeechSynthesisUtterance !== 'undefined';
 const TTS_LANG = { ko: 'ko-KR', en: 'en-US', ja: 'ja-JP', zh: 'zh-CN', es: 'es-ES', vi: 'vi-VN', hi: 'hi-IN' };
 const TTS_RATES = [0.7, 0.85, 1, 1.2, 1.5];
-const TTS_REPEATS = [1, 2, 3, 5];
+const TTS_REPEATS = [1, 2, 3, 5, 0]; // 0 = 무한 반복
 const TTS_GAPS = [1, 3, 5];
 
 function loadTtsOpts() {
@@ -1500,7 +1507,8 @@ function speakCurrent(gen) {
   let rep = 0;
   const once = () => playParts(parts, lang, gen, () => {
     rep++;
-    if (rep < ttsOpts.repeat) { pause(ttsOpts.gap, gen, once); return; }
+    // 반복 0 = 무한 (⏭로 넘어갈 때까지 같은 구절을 계속)
+    if (!ttsOpts.repeat || rep < ttsOpts.repeat) { pause(ttsOpts.gap, gen, once); return; }
     pause(ttsOpts.gap, gen, () => {
       let next = ttsFind(tts.pos + 1, 1);
       if (next < 0 && ttsOpts.loop) next = ttsFind(0, 1);
@@ -1615,7 +1623,7 @@ function ttsSheetInner() {
     '</div>' +
     '<div class="tts-opts">' +
     '<div class="tts-opt"><label>속도</label>' + chips('rate', TTS_RATES, x => x + '×') + '</div>' +
-    '<div class="tts-opt"><label>반복</label>' + chips('repeat', TTS_REPEATS, x => x + '번') + '</div>' +
+    '<div class="tts-opt"><label>반복</label>' + chips('repeat', TTS_REPEATS, x => (x ? x + '번' : '무한')) + '</div>' +
     '<div class="tts-opt"><label>간격</label>' + chips('gap', TTS_GAPS, x => x + '초') + '</div>' +
     '<div class="tts-opt"><label>옵션</label><div class="chips">' + toggle('readRef', '제목·주소 읽기') + toggle('loop', '목록 반복') + '</div></div>' +
     '</div>' +
