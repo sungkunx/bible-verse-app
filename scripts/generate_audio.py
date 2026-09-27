@@ -8,6 +8,9 @@ Google Cloud Text-to-Speech로 구절 음성 파일(mp3)을 만든다.
   audio/<역본>/<구절id>.ref.mp3   제목·주소 ("구원의 확신. 요한일서 5장 11절에서 12절.")
   audio/manifest.json             파일이 있는 구절 목록 + 본문 해시
 
+  --variant m 으로 같은 역본을 다른 음성으로 한 벌 더 만들 수 있다
+  (audio/<역본>-m/, manifest 키 '<역본>-m'). 앱의 '목소리' 옵션이 이것을 고른다.
+
 앱은 manifest를 읽어 파일이 있는 구절은 mp3로, 없는 구절은 기기 음성으로 읽는다.
 본문이 바뀌면 해시가 달라져 앱이 그 구절만 기기 음성으로 대신 읽고,
 이 스크립트를 다시 돌리면 바뀐 구절만 새로 만든다.
@@ -23,6 +26,7 @@ Google Cloud Text-to-Speech로 구절 음성 파일(mp3)을 만든다.
   python3 scripts/generate_audio.py                         # 원문 전체 (바뀐 것만)
   python3 scripts/generate_audio.py --trans grg             # 다른 역본 (개역개정 등)
   python3 scripts/generate_audio.py --dry-run               # 만들 구절 수·글자 수만 확인
+  python3 scripts/generate_audio.py --variant m --voice ko-KR-Chirp3-HD-Zubenelgenubi  # 남성 음성 한 벌
 """
 import argparse, base64, json, os, subprocess, sys, time, urllib.error, urllib.request
 
@@ -148,6 +152,7 @@ def main():
     ap = argparse.ArgumentParser(description='Google Cloud TTS로 구절 음성 파일 생성')
     ap.add_argument('--trans', nargs='+', default=['orig'], help='역본 id (기본: orig 암송카드 원문)')
     ap.add_argument('--voice', help='음성 이름 (예: ko-KR-Wavenet-A). 역본 하나일 때만')
+    ap.add_argument('--variant', help="같은 역본의 다른 음성 세트 이름 (예: m → audio/orig-m/)")
     ap.add_argument('--only', nargs='+', help='이 구절 id만')
     ap.add_argument('--limit', type=int, help='앞에서부터 N구절만')
     ap.add_argument('--force', action='store_true', help='바뀌지 않았어도 다시 만들기')
@@ -184,8 +189,8 @@ def main():
         print(f'→ {out} (배포 전 이 폴더는 지우세요)')
         return
 
-    if args.voice and len(args.trans) > 1:
-        sys.exit('--voice는 역본을 하나만 지정했을 때 쓸 수 있습니다.')
+    if (args.voice or args.variant) and len(args.trans) > 1:
+        sys.exit('--voice/--variant는 역본을 하나만 지정했을 때 쓸 수 있습니다.')
 
     manifest = load_manifest()
     cred = None if args.dry_run else auth()
@@ -196,7 +201,8 @@ def main():
             sys.exit(f'알 수 없는 역본: {tid}')
         lang = tmeta[tid]['refLang']
         lang_code = LANG_CODE[lang]
-        entry = manifest['translations'].setdefault(tid, {'voice': None, 'files': {}})
+        sid = f'{tid}-{args.variant}' if args.variant else tid   # 음성 세트 id (폴더·manifest 키)
+        entry = manifest['translations'].setdefault(sid, {'voice': None, 'files': {}})
         voice = args.voice or entry.get('voice') or DEFAULT_VOICE.get(lang)
         if not voice and not args.dry_run:
             # 기본 음성이 없는 언어는 WaveNet 음성 중 첫 번째
@@ -206,7 +212,7 @@ def main():
             voice = cand[0]
         voice_changed = bool(entry.get('voice')) and entry['voice'] != voice
         if voice_changed:
-            print(f'※ {tid}: 음성이 {entry["voice"]} → {voice}로 바뀌어 전체를 다시 만듭니다')
+            print(f'※ {sid}: 음성이 {entry["voice"]} → {voice}로 바뀌어 전체를 다시 만듭니다')
 
         texts = trans['texts'][tid]
         todo = [v for v in verses if texts.get(v['id'])]
@@ -220,7 +226,7 @@ def main():
             body = texts[v['id']]
             ref = ref_text(v, lang, books)
             old = entry['files'].get(v['id'], {})
-            d = os.path.join(AUDIO_DIR, tid)
+            d = os.path.join(AUDIO_DIR, sid)
             need_body = (args.force or voice_changed or old.get('h') != fnv1a(body)
                          or not os.path.exists(os.path.join(d, v['id'] + '.mp3')))
             need_ref = (args.force or voice_changed or old.get('r') != fnv1a(ref)
@@ -230,16 +236,16 @@ def main():
 
         chars = sum((len(b) if nb else 0) + (len(r) if nr else 0) for _, b, r, nb, nr in work)
         total_chars += chars
-        print(f'{tid} ({voice or "자동 선택"}): {len(work)}/{len(todo)}구절 생성 예정, {chars:,}자')
+        print(f'{sid} ({voice or "자동 선택"}): {len(work)}/{len(todo)}구절 생성 예정, {chars:,}자')
         if args.dry_run or not work:
             continue
 
-        os.makedirs(os.path.join(AUDIO_DIR, tid), exist_ok=True)
+        os.makedirs(os.path.join(AUDIO_DIR, sid), exist_ok=True)
         entry['voice'] = voice
         if voice_changed:
             entry['files'] = {}
         for i, (v, body, ref, nb, nr) in enumerate(work, 1):
-            base = os.path.join(AUDIO_DIR, tid, v['id'])
+            base = os.path.join(AUDIO_DIR, sid, v['id'])
             if nb:
                 open(base + '.mp3', 'wb').write(synth(cred, body, voice, lang_code))
             if nr:

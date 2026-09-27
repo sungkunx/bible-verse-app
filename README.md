@@ -54,9 +54,9 @@ npm run build    # 배포용 빌드 → dist/
 - 구절 화면의 🔊 버튼 → 지금 보는 목록이 재생 목록으로 열림
   (카드 화면이면 보고 있던 카드부터, 리스트 선택 모드면 고른 구절만 체크됨)
 - 재생 목록에서 **읽을 구절을 체크로 선택**, 구절을 탭하면 거기서부터 재생
-- 속도(0.7~1.5×), 구절 반복(한 구절을 1·2·3·5번·무한 — 무한은 ⏭로 넘김),
+- 속도(0.7~1.5×), 구절 반복(한 구절을 1·2·3·5번),
   세트 반복(체크한 구절 전체를 1·2·3·5번·무한), 사이 간격(1·3·5초),
-  제목·주소 읽기 — 설정은 저장됨
+  제목·주소 읽기(체크 표시로 켬/끔), 목소리(여성·남성, AI 음성 역본만) — 설정은 저장됨
 - 선택한 역본의 언어 음성으로 읽음(한국어 주소는 "요한복음 3장 16절",
   시편은 "23편"으로 읽음)
 - 창을 닫아도 화면 아래 미니 플레이어로 계속 재생·조작, 재생 목록을 연 카드
@@ -75,7 +75,11 @@ npm run build    # 배포용 빌드 → dist/
 audio/manifest.json          파일이 있는 구절 + 본문 해시(FNV-1a)
 audio/<역본>/<구절id>.mp3      본문
 audio/<역본>/<구절id>.ref.mp3  제목·주소 ("구원의 확신. 요한일서 5장 11절에서 12절.")
+audio/<역본>-m/...             남성 목소리 세트 (--variant m) — 앱의 '목소리: 남성'
 ```
+
+현재 원문: 여성 `ko-KR-Chirp3-HD-Kore`(`audio/orig/`),
+남성 `ko-KR-Chirp3-HD-Zubenelgenubi`(`audio/orig-m/`).
 
 본문이 바뀌어 해시가 맞지 않는 구절은 앱이 자동으로 기기 음성으로 읽고,
 스크립트를 다시 돌리면 바뀐 구절만 새로 만듭니다. 파일은 `index.html` 기준
@@ -98,6 +102,7 @@ python3 scripts/generate_audio.py --sample           # 한국어 음성별 샘�
 python3 scripts/generate_audio.py --voice ko-KR-Wavenet-A --limit 5   # 5구절 먼저
 python3 scripts/generate_audio.py                    # 암송카드 원문 전체 (바뀐 것만)
 python3 scripts/generate_audio.py --trans grg niv    # 다른 역본 (언어별 WaveNet 자동 선택)
+python3 scripts/generate_audio.py --variant m        # 남성 목소리 세트 (바뀐 것만)
 ```
 
 - 역본마다 쓴 음성은 manifest에 기록되어 다음 실행에도 유지되고,
