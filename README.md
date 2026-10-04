@@ -25,7 +25,10 @@ npm run dev      # 개발 서버 → http://localhost:5173/dev.html
 npm run build    # 배포용 빌드 → dist/
 ```
 
-## 기능 (v0.8)
+## 기능 (v0.9)
+
+버전·업데이트 날짜는 `single/template.html`의 `APP_VERSION`·`APP_UPDATED`에서
+바꾸며, 첫 화면 하단에 표시됩니다.
 
 카드 넘기기(스와이프/플릭, 방향 잠금), 탭하면 뒷면(제목+주소만) 뒤집기,
 리스트 뷰(본문 전문 표시), 즐겨찾기·암송완료(localStorage),

@@ -66,6 +66,7 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 /* ── 홈 ───────────────────────────────────────────── */
 .home-main { padding: 8px 16px 32px; }
 .home-caption { font-size: 0.85rem; color: var(--ink-faint); margin: 10px 4px 10px; }
+.app-version { margin-top: 28px; text-align: center; font-size: 0.72rem; color: var(--ink-faint); }
 .collection-list { display: flex; flex-direction: column; gap: 10px; }
 .collection-card {
   display: flex; align-items: center; gap: 14px; text-align: left; width: 100%;
@@ -512,6 +513,9 @@ const TRANS = {"translations":[{"id":"grg","name":"개역개정","short":"개역
 const TRANS_LIST = [
   { id: 'orig', name: '암송카드 원문', short: '원문', refLang: 'ko' },
 ].concat(TRANS ? TRANS.translations : []);
+/* 앱 버전 — 배포할 때 함께 올린다 (첫 화면 하단에 표시) */
+const APP_VERSION = '0.9';
+const APP_UPDATED = '2026.10.04';
 const DEFAULT_TRANS = TRANS ? 'grg' : 'orig';
 
 const collections = DATA.collections;
@@ -847,7 +851,9 @@ function homeHTML() {
     '<div class="home-shortcuts">' +
     '<button class="shortcut-card" data-action="open-kind" data-kind="favorites"><span class="shortcut-icon star">★</span>즐겨찾기<span class="shortcut-count">' + state.fav.size + '</span></button>' +
     '<button class="shortcut-card" data-action="open-kind" data-kind="completed"><span class="shortcut-icon check">✓</span>암송완료<span class="shortcut-count">' + state.done.size + '</span></button>' +
-    '</div>' + homeGroupsHTML() + '</main>';
+    '</div>' + homeGroupsHTML() +
+    '<p class="app-version">v' + APP_VERSION + ' · ' + APP_UPDATED + ' 업데이트</p>' +
+    '</main>';
 }
 
 /* ── 그룹(섹션/서브섹션) 화면 ─────────────────── */
