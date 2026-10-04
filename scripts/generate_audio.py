@@ -142,6 +142,26 @@ def load_manifest():
     return {'version': 1, 'translations': {}}
 
 
+# ── 구절 사이 무음 ─────────────────────────────────
+# 앱이 간격(1·3·5초)마다 재생하는 무음 mp3. 음성 파일과 같은 형식(MPEG-2 Layer III,
+# 24kHz, 32kbps, 모노)이라 화면이 꺼진 상태에서도 mp3끼리만 이어서 재생된다.
+# (브라우저에서 만든 WAV(blob:)로 넘어갈 때 iOS가 재생을 멈추는 문제 대응)
+SILENCE_SECS = (1, 3, 5)          # 앱의 TTS_GAPS와 같아야 함
+_MP3_HEADER = bytes.fromhex('fff344c4')  # MPEG-2 L3, 32kbps, 24kHz, 모노 — 96바이트/576샘플 프레임
+_MP3_FRAME = _MP3_HEADER + bytes(92)     # 사이드 정보·데이터가 모두 0 = 무음 프레임
+
+
+def write_silence():
+    for sec in SILENCE_SECS:
+        path = os.path.join(AUDIO_DIR, f'silence-{sec}.mp3')
+        frames = round(sec * 24000 / 576)
+        data = _MP3_FRAME * frames
+        if not (os.path.exists(path) and open(path, 'rb').read() == data):
+            os.makedirs(AUDIO_DIR, exist_ok=True)
+            open(path, 'wb').write(data)
+            print('✓', os.path.relpath(path, ROOT))
+
+
 def save_manifest(m):
     os.makedirs(AUDIO_DIR, exist_ok=True)
     with open(MANIFEST, 'w', encoding='utf-8') as f:
@@ -237,6 +257,8 @@ def main():
         chars = sum((len(b) if nb else 0) + (len(r) if nr else 0) for _, b, r, nb, nr in work)
         total_chars += chars
         print(f'{sid} ({voice or "자동 선택"}): {len(work)}/{len(todo)}구절 생성 예정, {chars:,}자')
+        if not args.dry_run:
+            write_silence()
         if args.dry_run or not work:
             continue
 

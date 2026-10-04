@@ -1466,21 +1466,11 @@ function playFile(url, gen, cb, onFail, rate) {
   if (p && p.catch) p.catch(err => { if (err && err.name !== 'AbortError') fin(onFail)(); });
 }
 /* 간격도 무음 오디오로 채운다 — 화면이 꺼진 상태에서 재생이 끊기지 않게
-   (소리가 멈춘 사이에는 브라우저가 타이머를 늦추거나 세션을 거둬 감) */
-const silenceUrls = {};
-function silenceUrl(sec) {
-  if (silenceUrls[sec]) return silenceUrls[sec];
-  const rate = 8000, n = Math.round(rate * sec);
-  const buf = new DataView(new ArrayBuffer(44 + n));
-  const str = (o, t) => { for (let i = 0; i < t.length; i++) buf.setUint8(o + i, t.charCodeAt(i)); };
-  str(0, 'RIFF'); buf.setUint32(4, 36 + n, true); str(8, 'WAVEfmt ');
-  buf.setUint32(16, 16, true); buf.setUint16(20, 1, true); buf.setUint16(22, 1, true);
-  buf.setUint32(24, rate, true); buf.setUint32(28, rate, true);
-  buf.setUint16(32, 1, true); buf.setUint16(34, 8, true);
-  str(36, 'data'); buf.setUint32(40, n, true);
-  for (let i = 0; i < n; i++) buf.setUint8(44 + i, 128);
-  return (silenceUrls[sec] = URL.createObjectURL(new Blob([buf], { type: 'audio/wav' })));
-}
+   (소리가 멈춘 사이에는 브라우저가 페이지를 멈춰 타이머가 돌지 않음).
+   무음도 음성과 같은 형식의 mp3 파일(audio/silence-N.mp3)로 재생한다 —
+   예전처럼 브라우저에서 만든 WAV(blob:)로 넘어가면 화면이 꺼진 상태에서
+   구절이 바뀔 때(첫 간격) 재생이 멈췄다. 파일은 generate_audio.py가 만든다. */
+const silenceUrl = sec => AUDIO_BASE + 'silence-' + sec + '.mp3';
 function waitAudio(sec, gen, cb) {
   // 무음은 재생 속도의 영향을 받지 않게 1배속으로
   playFile(silenceUrl(sec), gen, cb, () => wait(sec, gen, cb), 1);
@@ -1936,7 +1926,7 @@ document.addEventListener('click', e => {
     // 목소리를 바꾸면 읽던 구절을 새 목소리로 처음부터
     if (k === 'voice' && tts.playing) { ttsPlay(); return; }
     // 파일 재생 중이면 속도를 바로 반영 (기기 음성은 다음 문장부터)
-    if (k === 'rate' && tts.playing && !/^blob:/.test(audioEl.src)) audioEl.playbackRate = ttsOpts.rate;
+    if (k === 'rate' && tts.playing && !/silence-\d+\.mp3$/.test(audioEl.src)) audioEl.playbackRate = ttsOpts.rate;
     updateTtsUI();
   }
 });
